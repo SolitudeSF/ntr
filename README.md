@@ -1,0 +1,1 @@
+Implement colorscheme generator and templating configuration manager
