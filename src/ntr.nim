@@ -66,7 +66,7 @@ proc parseCmd(s: string, c: Context): string =
   if s.startsWith "e.":
     getEnv s[2..^1]
   elif s.startsWith "e:":
-    strip execProcess strip s[2..^1]
+    strip execProcess quoteShellPosix strip s[2..^1]
   elif s in c:
     c[s]
   else: ""
@@ -114,7 +114,17 @@ proc renderFile*(file: string, c: Context = newContext()): string =
     result &= res & '\n'
   result.setLen result.high
 
+proc parseProfile*(file: string, i, o: var seq[string]) =
+  let profile = file.renderFile
+  for k, v in profile.getContext:
+    i.add k
+    o.add v
+
 when isMainModule:
+  let
+    ntrDir = if existsEnv "XDG_CONFIG_HOME": "XDG_CONFIG_HOME".getEnv & "/ntr"
+    else: getConfigDir().expandTilde & "ntr"
+    ntrProfile = ntrDir & "/profile"
   var
     inFiles = newSeq[string]()
     outFiles = newSeq[string]()
@@ -142,13 +152,13 @@ when isMainModule:
     of cmdEnd: discard
 
   if profileFile.existsFile:
-    let profile = profileFile.renderFile
-    for key, val in profile.getContext:
-      inFiles.add key
-      outFiles.add val
+    profileFile.parseProfile inFiles, outFiles
 
   if inFiles.len != outFiles.len:
     abortWith "Input/output files mismatch"
+
+  if inFiles.len == 0 and ntrProfile.existsFile:
+    ntrProfile.parseProfile inFiles, outFiles
 
   for file in contextFiles:
     if file.existsFile:
