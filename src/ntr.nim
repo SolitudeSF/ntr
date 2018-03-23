@@ -6,14 +6,17 @@ const
   help = """
 ntr [OPTIONS] [OUTPUT FILES]
 
--i|--in        add input file
--c|--context   add context file
+-i|--in        add input file from pwd or from ntrDirectory/templates
+-c|--context   add context file from pwd or from ntrDirectory/contexts
 -p|--profile   specify profile file
 -o|--override  specify context addition/overrides
 -h|--help      print this message
 -v|--version   print version number
+
+if not profile or input files specified, input/output pairs are read from ntrDirectory/profile
 """
-  version = "v0.1.0"
+  gitrev = staticExec "git rev-parse --short HEAD"
+  version = &"v0.1.1 {gitrev} {CompileDate} {CompileTime}"
 
 proc abortWith(s: string, n = 1) = echo s; quit n
 
@@ -71,7 +74,7 @@ proc parseCmd(s: string, c: Context): string =
     c[s]
   else: ""
 
-#proc render(text: string, c: Context): string =
+#proc renderFile*(text: string, c: Context): string =
   #result = text
   #var
     #idx = 0
@@ -122,9 +125,13 @@ proc parseProfile*(file: string, i, o: var seq[string]) =
 
 when isMainModule:
   let
-    ntrDir = if existsEnv "XDG_CONFIG_HOME": "XDG_CONFIG_HOME".getEnv & "/ntr"
-    else: getConfigDir().expandTilde & "ntr"
-    ntrProfile = ntrDir & "/profile"
+    ntrDir =
+      if existsEnv "XDG_CONFIG_HOME":
+        "XDG_CONFIG_HOME".getEnv / "ntr"
+      else: getConfigDir().expandTilde / "ntr"
+    ntrProfile = ntrDir / "default"
+    ntrTemplates = ntrDir / "templates"
+    ntrContexts = ntrDir / "contexts"
   var
     inFiles = newSeq[string]()
     outFiles = newSeq[string]()
@@ -161,8 +168,10 @@ when isMainModule:
     ntrProfile.parseProfile inFiles, outFiles
 
   for file in contextFiles:
-    if file.existsFile:
+    if existsFile file:
       context.addContextFile file
+    elif existsFile ntrContexts / file:
+      context.addContextFile ntrContexts / file
     else:
       abortWith &"File {file} does not exist"
 
@@ -170,10 +179,14 @@ when isMainModule:
     context.put key, val
 
   for i, file in inFiles:
-    if file.existsFile:
-      try:
-        outFiles[i].writeFile file.renderFile context
-      except:
-        abortWith &"Couldn't write to {outFiles[i]}."
+    var output = ""
+    if existsFile file:
+      output = file.renderFile context
+    elif existsFile ntrTemplates / file:
+      output = (ntrTemplates / file).renderFile context
     else:
       abortWith &"File {file} does not exist"
+    try:
+      outFiles[i].writeFile output
+    except:
+      abortWith &"Couldn't write to {outFiles[i]}."
