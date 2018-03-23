@@ -2,10 +2,10 @@
 
 version       = "0.1.0"
 author        = "SolitudeSF"
-description   = "Templating configuration manager"
+description   = "Nim template (text) renderer"
 license       = "MIT"
 srcDir        = "src"
-bin           = @["verynice"]
+bin           = @["ntr"]
 
 # Dependencies
 

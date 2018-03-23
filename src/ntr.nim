@@ -1,11 +1,23 @@
 import strutils, sequtils, tables, os, ospaths, osproc, parseopt, strformat
 
-type
-  Context = TableRef[string, string]
+type Context = TableRef[string, string]
 
-proc abortWith(s: string, n = 1) =
-  echo s
-  quit n
+const
+  help = """
+ntr [OPTIONS] [OUTPUT FILES]
+
+-i|--in        add input file
+-c|--context   add context file
+-p|--profile   specify profile file
+-o|--override  specify context addition/overrides
+-h|--help      print this message
+-v|--version   print version number
+"""
+  version = "v0.1.0"
+
+proc abortWith(s: string, n = 1) = echo s; quit n
+
+proc newContext*: Context = newTable[string, string]()
 
 proc put[A, B](t: var TableRef[A, B] | Table[A, B], k: A, v: B) {.inline.} =
   if k in t: t[k] = v
@@ -15,30 +27,40 @@ proc leadWhite(s: string): int =
   for c in s:
     if c in Whitespace: inc result else: break
 
-proc addContext*(c: var Context, file: string) =
-  c = newTable[string, string]()
+template contextRoutine(c: var Context): untyped =
+  let
+    ws = line.leadWhite
+    l = line.strip
+  if l.len > 0:
+    if pad.len > 0 and ws <= pad[^1]:
+      while pad.len > 0 and ws <= pad[^1]:
+        pad.del pad.high
+        prefixes.del prefixes.high
+      prefix = prefixes.foldl(a & b & '.', "")
+    if l.find(':') == -1:
+      pad.add ws
+      prefixes.add l
+      prefix &= l & '.'
+    else:
+      let t = l.split(':', 1)
+      c.put prefix & t[0].strip, t[1].strip
+
+proc addContextFile*(c: var Context, file: string) =
   var
     prefixes = newSeq[string]()
     prefix = ""
     pad = newSeq[int]()
-
   for line in file.lines:
-    let
-      ws = line.leadWhite
-      l = line.strip
-    if l.len > 0:
-      if pad.len > 0 and ws <= pad[^1]:
-        while pad.len > 0 and ws <= pad[^1]:
-          pad.del pad.high
-          prefixes.del prefixes.high
-        prefix = prefixes.foldl(a & b & '.', "")
-      if l.find(':') == -1:
-        pad.add ws
-        prefixes.add l
-        prefix &= l & '.'
-      else:
-        let t = l.split(':', 1)
-        c.put prefix & t[0].strip, t[1].strip
+    contextRoutine c
+
+proc getContext*(s: string): Context =
+  result = newContext()
+  var
+    prefixes = newSeq[string]()
+    prefix = ""
+    pad = newSeq[int]()
+  for line in s.splitLines:
+    contextRoutine result
 
 proc parseCmd(s: string, c: Context): string =
   if s.startsWith "e.":
@@ -68,7 +90,7 @@ proc parseCmd(s: string, c: Context): string =
                #result[open + 2..<close].strip.parseCmd(c) &
                #result[close + 2..^1]
 
-proc renderFile(file: string, c: Context): string =
+proc renderFile*(file: string, c: Context = newContext()): string =
   result = ""
   for line in file.lines:
     var
@@ -92,63 +114,56 @@ proc renderFile(file: string, c: Context): string =
     result &= res & '\n'
   result.setLen result.high
 
+when isMainModule:
+  var
+    inFiles = newSeq[string]()
+    outFiles = newSeq[string]()
+    contextFiles = newSeq[string]()
+    profileFile = ""
+    context = newContext()
+    overrideContext = newContext()
 
-proc writeHelp =
-  echo """
-heh
-"""
+  for kind, key, val in getopt():
+    case kind
+    of cmdArgument:
+      outFiles.add key
+    of cmdLongOption, cmdShortOption:
+      case key
+      of "in", "i": inFiles.add val
+      of "context", "c": contextFiles.add val
+      of "profile", "p": profileFile = val
+      of "override", "o":
+        let t = val.split(':', 1)
+        overrideContext.add t[0].strip, t[1].strip
+      of "help", "h": abortWith help, 0
+      of "version", "v": abortWith version, 0
+      else:
+        abortWith &"Couldn't parse command line argument: {key}"
+    of cmdEnd: discard
 
-proc writeVersion =
-  echo "v0.1.0"
+  if profileFile.existsFile:
+    let profile = profileFile.renderFile
+    for key, val in profile.getContext:
+      inFiles.add key
+      outFiles.add val
 
+  if inFiles.len != outFiles.len:
+    abortWith "Input/output files mismatch"
 
-var
-  inFiles = newSeq[string]()
-  outFiles = newSeq[string]()
-  contextFiles = newSeq[string]()
-  profileFile = ""
-  context = newTable[string, string]()
-  overrideContext = newTable[string, string]()
-
-for kind, key, val in getopt():
-  case kind
-  of cmdArgument:
-    outFiles.add key
-  of cmdLongOption, cmdShortOption:
-    case key
-    of "in", "i": inFiles.add val
-    of "context", "c": contextFiles.add val
-    of "profile", "p": profileFile = val
-    of "override", "o":
-      let t = val.split(':', 1)
-      overrideContext.add t[0].strip, t[1].strip
-    of "help", "h":
-      writeHelp()
-      quit 0
-    of "version", "v":
-      writeVersion()
-      quit 0
+  for file in contextFiles:
+    if file.existsFile:
+      context.addContextFile file
     else:
-      abortWith &"Couldn't parse command line argument: {key}"
-  of cmdEnd: discard
+      abortWith &"File {file} does not exist"
 
-if inFiles.len != outFiles.len:
-  abortWith "Input/output files mismatch"
+  for key, val in overrideContext:
+    context.put key, val
 
-for file in contextFiles:
-  if file.existsFile:
-    context.addContext file
-  else:
-    abortWith &"File {file} does not exist"
-
-for key, val in overrideContext:
-  context.put key, val
-
-for i, file in inFiles:
-  if file.existsFile:
-    try:
-      outFiles[i].writeFile file.renderFile context
-    except:
-      abortWith &"Couldn't write to {outFiles[i]}."
-  else:
-    abortWith &"File {file} does not exist"
+  for i, file in inFiles:
+    if file.existsFile:
+      try:
+        outFiles[i].writeFile file.renderFile context
+      except:
+        abortWith &"Couldn't write to {outFiles[i]}."
+    else:
+      abortWith &"File {file} does not exist"
