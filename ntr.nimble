@@ -2,7 +2,7 @@
 
 version       = "0.1.3"
 author        = "SolitudeSF"
-description   = "Nim template (text) renderer"
+description   = "Nim templating rice/resolver"
 license       = "MIT"
 srcDir        = "src"
 bin           = @["ntr"]

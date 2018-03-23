@@ -90,25 +90,6 @@ proc parseCmd(s: string, c: Context): string =
     c[s]
   else: ""
 
-#proc renderFile*(text: string, c: Context): string =
-  #result = text
-  #var
-    #idx = 0
-    #opens = newSeq[int]()
-  #while true:
-    #let idxOpen = text.find("{{", idx)
-    #if idxOpen > 0:
-      #idx = idxOpen + 2
-      #opens.add idxOpen
-    #else: break
-  #for i in countdown(opens.high, 0):
-    #let open = opens[i]
-    #let close = result.find("}}", opens[i] + 2)
-    #if close > 0:
-      #result = result[0..<open] &
-               #result[open + 2..<close].strip.parseCmd(c) &
-               #result[close + 2..^1]
-
 proc renderFile*(file: string, c: Context = newContext()): string =
   result = ""
   for line in file.lines:
