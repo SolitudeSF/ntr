@@ -14,6 +14,7 @@ Options:
   -c, --context   add context file from pwd or from ntrDirectory/contexts
   -p, --profile   specify profile file
   -o, --override  specify context addition/overrides
+  --stdin         additionally read context from stdin
   -d              only use files from ntrDirectory
   -D              never use files from ntrDirectory
   -h, --help      print this message
@@ -23,7 +24,7 @@ If no profile or input files specified, input/output pairs are read from ntrDire
 Specifying both -d and -D negates both options.
 """
   gitrev = staticExec "git rev-parse --short HEAD"
-  version = &"ntr v0.1.2 {gitrev} compiled at {CompileDate} {CompileTime}"
+  version = &"ntr v0.1.3 {gitrev} compiled at {CompileDate} {CompileTime}"
 
 proc abortWith(s: string, n = 1) = echo s; quit n
 
@@ -61,6 +62,14 @@ proc addContextFile*(c: var Context, file: string) =
     prefix = ""
     pad = newSeq[int]()
   for line in file.lines:
+    contextRoutine c
+
+proc addContext*(c: var Context, text: string) =
+  var
+    prefixes = newSeq[string]()
+    prefix = ""
+    pad = newSeq[int]()
+  for line in text.splitLines:
     contextRoutine c
 
 proc getContext*(s: string): Context =
@@ -147,6 +156,7 @@ when isMainModule:
     overrideContext = newContext()
     onlyDef = false
     onlyExt = false
+    readStdin = false
 
   for kind, key, val in getopt():
     case kind
@@ -162,6 +172,7 @@ when isMainModule:
         if t.len == 2:
           overrideContext.add t[0].strip, t[1].strip
         else: abortWith &"Incorrect override: {val}"
+      of "stdin": readStdin = true
       of "d": onlyDef = true
       of "D": onlyExt = true
       of "help", "h": abortWith help, 0
@@ -192,6 +203,9 @@ when isMainModule:
 
   for key, val in overrideContext:
     context.put key, val
+
+  if readStdin:
+    context.addContext stdin.readAll
 
   if context.len == 0:
     abortWith "No context given"
