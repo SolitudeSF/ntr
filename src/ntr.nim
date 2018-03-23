@@ -6,17 +6,20 @@ const
   help = """
 ntr [OPTIONS] [OUTPUT FILES]
 
--i|--in        add input file from pwd or from ntrDirectory/templates
--c|--context   add context file from pwd or from ntrDirectory/contexts
--p|--profile   specify profile file
--o|--override  specify context addition/overrides
--h|--help      print this message
--v|--version   print version number
+-i,--in        add input file from pwd or from ntrDirectory/templates
+-c,--context   add context file from pwd or from ntrDirectory/contexts
+-p,--profile   specify profile file
+-o,--override  specify context addition/overrides
+-d             only use files from ntrDirectory
+-D             never use files from ntrDirectory
+-h,--help      print this message
+-v,--version   print version number
 
-if not profile or input files specified, input/output pairs are read from ntrDirectory/profile
+If not profile or input files specified, input/output pairs are read from ntrDirectory/profile
+Specifying both -d and -D negates both options
 """
   gitrev = staticExec "git rev-parse --short HEAD"
-  version = &"v0.1.1 {gitrev} {CompileDate} {CompileTime}"
+  version = &"ntr v0.1.2 {gitrev} compiled at {CompileDate} {CompileTime}"
 
 proc abortWith(s: string, n = 1) = echo s; quit n
 
@@ -139,6 +142,8 @@ when isMainModule:
     profileFile = ""
     context = newContext()
     overrideContext = newContext()
+    onlyDef = false
+    onlyExt = false
 
   for kind, key, val in getopt():
     case kind
@@ -152,6 +157,8 @@ when isMainModule:
       of "override", "o":
         let t = val.split(':', 1)
         overrideContext.add t[0].strip, t[1].strip
+      of "d": onlyDef = true
+      of "D": onlyExt = true
       of "help", "h": abortWith help, 0
       of "version", "v": abortWith version, 0
       else:
@@ -167,10 +174,14 @@ when isMainModule:
   if inFiles.len == 0 and ntrProfile.existsFile:
     ntrProfile.parseProfile inFiles, outFiles
 
+  if onlyDef and onlyExt:
+    onlyDef = false
+    onlyExt = false
+
   for file in contextFiles:
-    if existsFile file:
+    if not onlyDef and existsFile file:
       context.addContextFile file
-    elif existsFile ntrContexts / file:
+    elif not onlyExt and existsFile ntrContexts / file:
       context.addContextFile ntrContexts / file
     else:
       abortWith &"File {file} does not exist"
@@ -180,9 +191,9 @@ when isMainModule:
 
   for i, file in inFiles:
     var output = ""
-    if existsFile file:
+    if not onlyDef and existsFile file:
       output = file.renderFile context
-    elif existsFile ntrTemplates / file:
+    elif not onlyExt and existsFile ntrTemplates / file:
       output = (ntrTemplates / file).renderFile context
     else:
       abortWith &"File {file} does not exist"
