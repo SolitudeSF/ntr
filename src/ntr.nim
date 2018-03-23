@@ -159,7 +159,9 @@ when isMainModule:
       of "profile", "p": profileFile = val
       of "override", "o":
         let t = val.split(':', 1)
-        overrideContext.add t[0].strip, t[1].strip
+        if t.len == 2:
+          overrideContext.add t[0].strip, t[1].strip
+        else: abortWith &"Incorrect override: {val}"
       of "d": onlyDef = true
       of "D": onlyExt = true
       of "help", "h": abortWith help, 0
@@ -190,6 +192,9 @@ when isMainModule:
 
   for key, val in overrideContext:
     context.put key, val
+
+  if context.len == 0:
+    abortWith "No context given"
 
   for i, file in inFiles:
     var output = ""
