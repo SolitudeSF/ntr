@@ -213,8 +213,11 @@ when isMainModule:
     else:
       abortWith &"File {file} does not exist"
     try:
+      let dir = parentDir outFiles[i]
       if doBackup and existsFile outFiles[i]:
         copyFileWithPermissions outFiles[i], outFiles[i] & ".bak"
+      elif not existsDir dir:
+        createDir dir
       outFiles[i].writeFile output
     except:
       abortWith &"Couldn't write to {outFiles[i]}."
