@@ -94,13 +94,13 @@ proc renderFile*(file: string, c: Context = newContext()): string =
   result = ""
   for line in file.lines:
     var
-      i = 0
+      i = line.high
       opens = newSeq[int]()
       res = line
     while true:
-      let open = line.find("{{", i)
+      let open = line.rfind("{{", i)
       if open > 0:
-        i = open + 2
+        i = open - 1
         opens.add open
       else: break
     for o in countdown(opens.high, 0):
