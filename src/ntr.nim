@@ -15,6 +15,7 @@ Options:
   -p, --profile   specify profile file
   -o, --override  specify context addition/overrides
   --stdin         additionally read context from stdin
+  --backup        backup existing files
   -d              only use files from ntrDirectory
   -D              never use files from ntrDirectory
   -h, --help      print this message
@@ -147,6 +148,7 @@ when isMainModule:
     overrideContext = newContext()
     onlyDef = false
     onlyExt = false
+    doBackup = false
     readStdin = false
 
   for kind, key, val in getopt():
@@ -164,6 +166,7 @@ when isMainModule:
           overrideContext.add t[0].strip, t[1].strip
         else: abortWith &"Incorrect override: {val}"
       of "stdin": readStdin = true
+      of "backup": doBackup = true
       of "d": onlyDef = true
       of "D": onlyExt = true
       of "help", "h": abortWith help, 0
@@ -210,6 +213,8 @@ when isMainModule:
     else:
       abortWith &"File {file} does not exist"
     try:
+      if doBackup and existsFile outFiles[i]:
+        copyFileWithPermissions outFiles[i], outFiles[i] & ".bak"
       outFiles[i].writeFile output
     except:
       abortWith &"Couldn't write to {outFiles[i]}."
