@@ -24,7 +24,7 @@ If no profile or input files specified, input/output pairs are read from ntrDire
 Specifying both -d and -D negates both options.
 """
   gitrev = staticExec "git rev-parse --short HEAD"
-  version = &"ntr v0.1.3 {gitrev} compiled at {CompileDate} {CompileTime}"
+  version = &"ntr v0.1.4 {gitrev} compiled at {CompileDate} {CompileTime}"
 
 proc abortWith(s: string, n = 1) = echo s; quit n
 
@@ -42,7 +42,7 @@ template contextRoutine(c: var Context): untyped =
   let
     ws = line.leadWhite
     l = line.strip
-  if l.len > 0:
+  if l.len > 0 and l[0] != '#':
     if pad.len > 0 and ws <= pad[^1]:
       while pad.len > 0 and ws <= pad[^1]:
         pad.del pad.high
@@ -54,7 +54,8 @@ template contextRoutine(c: var Context): untyped =
       prefix &= l & '.'
     else:
       let t = l.split(':', 1)
-      c.put prefix & t[0].strip, t[1].strip
+      for k in t[0].split ',':
+        c.put prefix & k.strip, t[1].strip
 
 proc addContextFile*(c: var Context, file: string) =
   var
