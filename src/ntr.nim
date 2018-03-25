@@ -25,7 +25,7 @@ If no profile or input files specified, input/output pairs are read from ntrDire
 Specifying both -d and -D negates both options.
 """
   gitrev = staticExec "git rev-parse --short HEAD"
-  version = &"ntr v0.1.4 {gitrev} compiled at {CompileDate} {CompileTime}"
+  version = &"ntr v0.1.5 {gitrev} compiled at {CompileDate} {CompileTime}"
 
 proc abortWith(s: string, n = 1) = echo s; quit n
 
@@ -99,18 +99,17 @@ template renderRoutine(r: var string): untyped =
     res = line
   while true:
     let open = line.rfind("{{", i)
-    if open > 0:
+    if open != -1:
       i = open - 1
       opens.add open
     else: break
-  for o in countdown(opens.high, 0):
-    let
-      open = opens[o]
-      close = res.find("}}", open + 2)
-    if close > 0:
-      res = res[0..<open] &
-            res[open + 2..<close].strip.parseCmd(c) &
+  for o in opens:
+    let close = res.find("}}", o)
+    if close != -1:
+      res = res[0..<o] &
+            res[o + 2..<close].strip.parseCmd(c) &
             res[close + 2..^1]
+      echo res, '\n'
   r &= res & '\n'
 
 proc renderFile*(file: string, c = newContext()): string =
