@@ -39,6 +39,17 @@ proc leadWhite(s: string): int =
   for c in s:
     if c in Whitespace: inc result else: break
 
+proc parseId(c: var Context, k, v: string, p = "") {.inline.} =
+  var k = k
+  if k.find("{{") != -1 or k.find("}}") != -1:
+    stderr.write &"Invalid identifier {k}. Ignored"
+    return
+  if k.endsWith '*':
+    k.setLen k.high
+    k = k.strip(trailing = true)
+    putEnv k, v
+  c.put p & k, v
+
 template contextRoutine(c: var Context): untyped =
   let
     ws = line.leadWhite
@@ -56,7 +67,7 @@ template contextRoutine(c: var Context): untyped =
     else:
       let t = l.split(':', 1)
       for k in t[0].split ',':
-        c.put prefix & k.strip, t[1].strip
+         parseId c, k.strip, t[1].strip, prefix
 
 proc addContextFile*(c: var Context, file: string) =
   var
@@ -163,7 +174,7 @@ when isMainModule:
       of "override":
         let t = val.split(':', 1)
         if t.len == 2:
-          overrideContext.add t[0].strip, t[1].strip
+          overrideContext.parseId t[0].strip, t[1].strip
         else: abortWith &"Incorrect override: {val}"
       of "stdin": readStdin = true
       of "backup": doBackup = true
@@ -242,8 +253,8 @@ when isMainModule:
     let f = ntrFinishers / "default"
     if existsFile f:
       try:
-       let errC = execCmd f
-       if errC != 0:
-        stderr.writeLine &"Default finisher exited with {errC}"
+        let errC = execCmd f
+        if errC != 0:
+          stderr.writeLine &"Default finisher exited with {errC}"
       except:
         stderr.writeLine &"Couldn't run default finisher"
