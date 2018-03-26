@@ -137,6 +137,7 @@ when isMainModule:
     ntrProfile = ntrDir / "default"
     ntrTemplates = ntrDir / "templates"
     ntrContexts = ntrDir / "contexts"
+    ntrFinishers = ntrDir / "finishers"
   var
     inFiles = newSeq[string]()
     outFiles = newSeq[string]()
@@ -207,12 +208,18 @@ when isMainModule:
       output = (ntrTemplates / file).renderFile context
     else:
       abortWith &"File {file} does not exist"
-    try:
-      let dir = parentDir outFiles[i]
-      if doBackup and existsFile outFiles[i]:
+    let dir = parentDir outFiles[i]
+    if doBackup and existsFile outFiles[i]:
+      try:
         copyFileWithPermissions outFiles[i], outFiles[i] & ".bak"
-      elif not existsDir dir:
+      except:
+        abortWith &"Couldn't backup {outFiles[i]}."
+    elif not existsDir dir:
+      try:
         createDir dir
+      except:
+        abortWith &"Couldn't create directory chain {dir}."
+    try:
       outFiles[i].writeFile output
     except:
       abortWith &"Couldn't write to {outFiles[i]}."
