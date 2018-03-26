@@ -27,7 +27,7 @@ Specifying both -d and -D negates both options.
   gitrev = staticExec "git rev-parse --short HEAD"
   version = &"ntr v0.1.6 {gitrev} compiled at {CompileDate} {CompileTime}"
 
-proc abortWith(s: string, n = 1) = echo s; quit n
+proc abortWith(s: string, n = 1) = stderr.writeLine s; quit n
 
 proc newContext*: Context = newTable[string, string]()
 
@@ -238,4 +238,12 @@ when isMainModule:
          if errC != 0:
           stderr.writeLine &"Finisher {f} exited with {errC}"
         except:
-          stderr.writeLine &"Could'nt run finisher {f}"
+          stderr.writeLine &"Couldn't run finisher {f}"
+    let f = ntrFinishers / "default"
+    if existsFile f:
+      try:
+       let errC = execCmd f
+       if errC != 0:
+        stderr.writeLine &"Default finisher exited with {errC}"
+      except:
+        stderr.writeLine &"Couldn't run default finisher"
