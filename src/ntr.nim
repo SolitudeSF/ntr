@@ -7,13 +7,13 @@ const
 Usage: ntr [OPTIONS] [OUTPUT FILES]
 
 Arguments:
-  arguments are passed as output files to corresponding input files
+  Context files supplied as arguments and sourced from pwd or from ntrDirectory/contexts
 
 Options:
   -i, --in        add input file from pwd or from ntrDirectory/templates
-  -c, --context   add context file from pwd or from ntrDirectory/contexts
+  -o, --out       add output file
   -p, --profile   specify profile file
-  -o, --override  specify context addition/overrides
+  --override      specify context addition/overrides
   --stdin         additionally read context from stdin
   --backup        backup existing files
   -d              only use files from ntrDirectory
@@ -154,13 +154,13 @@ when isMainModule:
   for kind, key, val in getopt():
     case kind
     of cmdArgument:
-      outFiles.add key
+      contextFiles.add key
     of cmdLongOption, cmdShortOption:
       case key
       of "in", "i": inFiles.add val
-      of "context", "c": contextFiles.add val
+      of "out", "o": outFiles.add val
       of "profile", "p": profileFile = val
-      of "override", "o":
+      of "override":
         let t = val.split(':', 1)
         if t.len == 2:
           overrideContext.add t[0].strip, t[1].strip
