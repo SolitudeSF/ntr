@@ -199,9 +199,6 @@ when isMainModule:
   if readStdin:
     context.addContext stdin.readAll
 
-  if context.len == 0:
-    abortWith "No context given"
-
   for i, file in inFiles:
     var output = ""
     if not onlyDef and existsFile file:
