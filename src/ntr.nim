@@ -183,7 +183,9 @@ when isMainModule:
     abortWith "Input/output files mismatch"
 
   if inFiles.len == 0 and ntrProfile.existsFile:
+    if doFinish == 0: doFinish = 1
     ntrProfile.parseProfile inFiles, outFiles
+  elif doFinish == 0: doFinish = -1
 
   if onlyDef and onlyExt:
     onlyDef = false
