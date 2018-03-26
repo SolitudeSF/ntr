@@ -25,7 +25,7 @@ If no profile or input files specified, input/output pairs are read from ntrDire
 Specifying both -d and -D negates both options.
 """
   gitrev = staticExec "git rev-parse --short HEAD"
-  version = &"ntr v0.1.6 {gitrev} compiled at {CompileDate} {CompileTime}"
+  version = &"ntr v0.1.7 {gitrev} compiled at {CompileDate} {CompileTime}"
 
 proc abortWith(s: string, n = 1) = stderr.writeLine s; quit n
 
