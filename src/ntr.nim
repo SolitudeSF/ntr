@@ -25,7 +25,7 @@ If no profile or input files specified, input/output pairs are read from ntrDire
 Specifying both -d and -D negates both options.
 """
   gitrev = staticExec "git rev-parse --short HEAD"
-  version = &"ntr v0.1.5 {gitrev} compiled at {CompileDate} {CompileTime}"
+  version = &"ntr v0.1.6 {gitrev} compiled at {CompileDate} {CompileTime}"
 
 proc abortWith(s: string, n = 1) = echo s; quit n
 
@@ -149,6 +149,7 @@ when isMainModule:
     onlyExt = false
     doBackup = false
     readStdin = false
+    doFinish = 0
 
   for kind, key, val in getopt():
     case kind
@@ -168,6 +169,8 @@ when isMainModule:
       of "backup": doBackup = true
       of "d": onlyDef = true
       of "D": onlyExt = true
+      of "f": doFinish = 1
+      of "F": doFinish = -1
       of "help", "h": abortWith help, 0
       of "version", "v": abortWith version, 0
       else: abortWith &"Couldn't parse command line argument: {key}"
@@ -223,3 +226,14 @@ when isMainModule:
       outFiles[i].writeFile output
     except:
       abortWith &"Couldn't write to {outFiles[i]}."
+
+  if doFinish == 1:
+    for i in inFiles:
+      let f = ntrFinishers / i.extractFilename
+      if existsFile f:
+        try:
+         let errC = execCmd f
+         if errC != 0:
+          stderr.writeLine &"Finisher {f} exited with {errC}"
+        except:
+          stderr.writeLine &"Could'nt run finisher {f}"
