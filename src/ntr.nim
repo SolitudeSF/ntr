@@ -221,6 +221,9 @@ when isMainModule:
     onlyDef = false
     onlyExt = false
 
+  if not onlyExt and existsFile ntrContexts / "default":
+    context.addContextFile ntrContexts / "default"
+
   for file in contextFiles:
     if not onlyDef and existsFile file:
       context.addContextFile file
