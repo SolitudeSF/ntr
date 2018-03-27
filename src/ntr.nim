@@ -38,18 +38,30 @@ proc leadWhite(s: string): int =
   for c in s:
     if c in Whitespace: inc result else: break
 
+proc isIdentifier(s: string): bool =
+  for c in s:
+    if c in {'.', '{', '}', ' ', '\t', '\v', '\c', '\L', '\f'}:
+      return false
+  true
+
+proc isExportable(s: string): bool =
+  if s[0] in IdentStartChars:
+    for i in 1..s.high:
+      if s[i] notin IdentChars:
+        return false
+    true
+  else: false
+
 proc render*(text: string, c = newContext()): string
 
 proc parseId(c: var Context, k, v: string, p = "") {.inline.} =
-  var k = k
-  if k.find("{{") != -1 or k.find("}}") != -1:
-    stderr.write &"Invalid identifier {k}. Ignored"
-    return
-  if k.endsWith '*':
-    k.setLen k.high
+  if k.endsWith('*') and k.isExportable:
+    var k = k[0..^2]
     k = k.strip(trailing = true)
     putEnv k, v
-  c.put p & k, v
+    c.put p & k, v
+  elif k.isIdentifier:
+    c.put p & k, v
 
 template contextRoutine(c: var Context): untyped =
   let
@@ -62,6 +74,8 @@ template contextRoutine(c: var Context): untyped =
         prefixes.del prefixes.high
       prefix = prefixes.foldl(a & b & '.', "")
     if l.find(':') == -1:
+      if not l.isIdentifier:
+        abortWith "Illegal section name: " & l
       pad.add ws
       prefixes.add l
       prefix &= l & '.'
