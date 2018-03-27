@@ -30,7 +30,6 @@ Specifying both -d and -D negates both options.
 proc abortWith(s: string, n = 1) = stderr.writeLine s; quit n
 
 proc newContext*: Context = newTable[string, string]()
-
 proc put[A, B](t: var TableRef[A, B] | Table[A, B], k: A, v: B) {.inline.} =
   if k in t: t[k] = v
   else: t.add k, v
@@ -38,6 +37,8 @@ proc put[A, B](t: var TableRef[A, B] | Table[A, B], k: A, v: B) {.inline.} =
 proc leadWhite(s: string): int =
   for c in s:
     if c in Whitespace: inc result else: break
+
+proc render*(text: string, c = newContext()): string
 
 proc parseId(c: var Context, k, v: string, p = "") {.inline.} =
   var k = k
@@ -65,9 +66,11 @@ template contextRoutine(c: var Context): untyped =
       prefixes.add l
       prefix &= l & '.'
     else:
-      let t = l.split(':', 1)
+      let
+        t = l.split(':', 1)
+        v = t[1].render.strip
       for k in t[0].split ',':
-         parseId c, k.strip, t[1].strip, prefix
+         parseId c, k.strip, v, prefix
 
 proc addContextFile*(c: var Context, file: string) =
   var
