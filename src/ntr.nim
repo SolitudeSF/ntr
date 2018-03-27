@@ -26,27 +26,29 @@ Specifying both -d and -D negates both options.
 """
   gitrev = staticExec "git rev-parse --short HEAD"
   version = &"ntr v0.1.7 {gitrev} compiled at {CompileDate} {CompileTime}"
+  illegalChars = {'.', '{', '}'} + Whitespace
 
 proc abortWith(s: string, n = 1) = stderr.writeLine s; quit n
 
 proc newContext*: Context = newTable[string, string]()
+
 proc put[A, B](t: var TableRef[A, B] | Table[A, B], k: A, v: B) {.inline.} =
   if k in t: t[k] = v
   else: t.add k, v
 
-proc leadWhite(s: string): int =
+proc leadWs(s: string): int =
   for c in s:
     if c in Whitespace: inc result else: break
 
 proc isIdentifier(s: string): bool =
   for c in s:
-    if c in {'.', '{', '}', ' ', '\t', '\v', '\c', '\L', '\f'}:
+    if c in illegalChars:
       return false
   true
 
 proc isExportable(s: string): bool =
   if s[0] in IdentStartChars:
-    for i in 1..s.high:
+    for i in 1..<s.high:
       if s[i] notin IdentChars:
         return false
     true
@@ -65,7 +67,7 @@ proc parseId(c: var Context, k, v: string, p = "") {.inline.} =
 
 template contextRoutine(c: var Context): untyped =
   let
-    ws = line.leadWhite
+    ws = line.leadWs
     l = line.strip
   if l.len > 0 and l[0] != '#':
     if pad.len > 0 and ws <= pad[^1]:
