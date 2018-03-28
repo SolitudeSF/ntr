@@ -26,7 +26,7 @@ Specifying both -d and -D negates both options.
 """
   gitrev = staticExec "git rev-parse --short HEAD"
   version = &"ntr v0.1.7 {gitrev} compiled at {CompileDate} {CompileTime}"
-  illegalChars = {'.', '{', '}'} + Whitespace
+  illegalChars = {'.', '{', '}', ':', '$'} + Whitespace
 
 proc abortWith(s: string, n = 1) = stderr.writeLine s; quit n
 
@@ -114,8 +114,8 @@ proc getContext*(s: string): Context =
     contextRoutine result
 
 proc parseCmd(s: string, c: Context): string =
-  if s.startsWith "e.":
-    getEnv s[2..^1]
+  if s.startsWith "$":
+    getEnv s[1..^1]
   elif s.startsWith "e:":
     strip execProcess quoteShellPosix strip s[2..^1]
   elif s in c:
@@ -139,7 +139,7 @@ template renderRoutine(r: var string): untyped =
       res = res[0..<o] &
             res[o + 2..<close].strip.parseCmd(c) &
             res[close + 2..^1]
-  r &= res & '\n'
+  r &= res & "\p"
 
 proc renderFile*(file: string, c = newContext()): string =
   result = ""
