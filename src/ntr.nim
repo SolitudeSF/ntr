@@ -13,6 +13,7 @@ Options:
   -i, --in        add input file from pwd or from ntrDirectory/templates
   -o, --out       add output file
   -p, --profile   specify profile file
+  --noDefaultProfile, --nDP     disable default profile
   --override      specify context addition/overrides
   --backup        backup existing files
   -d              only use files from ntrDirectory
@@ -201,6 +202,7 @@ when isMainModule:
           overrideContext.parseId t[0].strip, t[1].strip
         else: abortWith &"Incorrect override: {val}"
       of "backup": doBackup = true
+      of "noDefaultProfile", "nDP": defaultProfile = false
       of "d": onlyDef = true
       of "D": onlyExt = true
       of "f": doFinish = 1
