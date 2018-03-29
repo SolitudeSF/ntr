@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.7"
+version       = "0.1.8"
 author        = "SolitudeSF"
 description   = "Nim templating rice/resolver"
 license       = "MIT"
