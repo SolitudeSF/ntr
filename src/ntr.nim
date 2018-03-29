@@ -24,8 +24,8 @@ Options:
 If no profile or input files specified, input/output pairs are read from ntrDirectory/profile.
 Specifying both -d and -D negates both options.
 """
-  gitrev = staticExec "git rev-parse --short HEAD"
-  version = &"ntr v0.1.8 {gitrev} compiled at {CompileDate} {CompileTime}"
+  gitrev = staticExec "git describe --tags --long --dirty | sed -E 's/-.+-/ /'"
+  version = &"ntr {gitrev} compiled at {CompileDate} {CompileTime}"
   illegalChars = {'.', '{', '}', ':', '$'} + Whitespace
 
 proc abortWith(s: string, n = 1) = stderr.writeLine s; quit n
