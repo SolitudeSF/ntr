@@ -253,21 +253,24 @@ when isMainModule:
       output = (ntrTemplates / file).renderFile context
     else:
       abortWith &"File {file} does not exist"
-    let dir = parentDir outFiles[i]
-    if doBackup and existsFile outFiles[i]:
+    if outFiles[i] == "--":
+      echo output
+    else:
+      let dir = parentDir outFiles[i]
+      if doBackup and existsFile outFiles[i]:
+        try:
+          copyFileWithPermissions outFiles[i], outFiles[i] & ".bak"
+        except:
+          abortWith &"Couldn't backup {outFiles[i]}."
+      elif not existsDir dir:
+        try:
+          createDir dir
+        except:
+          abortWith &"Couldn't create directory chain {dir}."
       try:
-        copyFileWithPermissions outFiles[i], outFiles[i] & ".bak"
+        outFiles[i].writeFile output
       except:
-        abortWith &"Couldn't backup {outFiles[i]}."
-    elif not existsDir dir:
-      try:
-        createDir dir
-      except:
-        abortWith &"Couldn't create directory chain {dir}."
-    try:
-      outFiles[i].writeFile output
-    except:
-      abortWith &"Couldn't write to {outFiles[i]}."
+        abortWith &"Couldn't write to {outFiles[i]}."
 
   if doFinish == 1:
     for i in inFiles:
