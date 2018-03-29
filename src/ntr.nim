@@ -14,8 +14,10 @@ Options:
   -o, --out       add output file
   -p, --profile   specify profile file
   --noDefaultProfile, --nDP     disable default profile
+  --stdin         read input from stdin
   --override      specify context addition/overrides
   --backup        backup existing files
+  -e, --empty     allow empty context
   -d              only use files from ntrDirectory
   -D              never use files from ntrDirectory
   -h, --help      print this message
@@ -186,6 +188,8 @@ when isMainModule:
     defaultProfile = true
     doBackup = false
     doFinish = 0
+    emptyContext = false
+    readStdin = false
 
   for kind, key, val in getopt():
     case kind
@@ -205,6 +209,8 @@ when isMainModule:
       of "noDefaultProfile", "nDP": defaultProfile = false
       of "d": onlyDef = true
       of "D": onlyExt = true
+      of "empty", "e": emptyContext = true
+      of "stdin": readStdin = true
       of "f": doFinish = 1
       of "F": doFinish = -1
       of "help", "h": abortWith help, 0
@@ -236,10 +242,14 @@ when isMainModule:
   for key, val in overrideContext:
     context.put key, val
 
-  let stdoutput = renderStdin()
-  if stdoutput.len > 0:
-    defaultProfile = false
-    echo stdoutput
+  if not emptyContext and context.len == 0:
+    abortWith "Empty context"
+
+  if readStdin:
+    let stdoutput = renderStdin context
+    if stdoutput.len > 0:
+      defaultProfile = false
+      echo stdoutput
 
   if defaultProfile and inFiles.len == 0 and ntrProfile.existsFile:
     if doFinish == 0: doFinish = 1
