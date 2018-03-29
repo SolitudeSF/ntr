@@ -14,7 +14,6 @@ Options:
   -o, --out       add output file
   -p, --profile   specify profile file
   --override      specify context addition/overrides
-  --stdin         additionally read context from stdin
   --backup        backup existing files
   -d              only use files from ntrDirectory
   -D              never use files from ntrDirectory
@@ -147,6 +146,12 @@ proc renderFile*(file: string, c = newContext()): string =
     renderRoutine result
   result.setLen result.high
 
+proc renderStdin*(c = newContext()): string =
+  result = ""
+  for line in stdin.lines:
+    renderRoutine result
+  result.setLen result.high
+
 proc render*(text: string, c = newContext()): string =
   result = ""
   for line in text.splitLines:
@@ -177,8 +182,8 @@ when isMainModule:
     overrideContext = newContext()
     onlyDef = false
     onlyExt = false
+    defaultProfile = true
     doBackup = false
-    readStdin = false
     doFinish = 0
 
   for kind, key, val in getopt():
@@ -195,7 +200,6 @@ when isMainModule:
         if t.len == 2:
           overrideContext.parseId t[0].strip, t[1].strip
         else: abortWith &"Incorrect override: {val}"
-      of "stdin": readStdin = true
       of "backup": doBackup = true
       of "d": onlyDef = true
       of "D": onlyExt = true
@@ -211,11 +215,6 @@ when isMainModule:
 
   if inFiles.len != outFiles.len:
     abortWith "Input/output files mismatch"
-
-  if inFiles.len == 0 and ntrProfile.existsFile:
-    if doFinish == 0: doFinish = 1
-    ntrProfile.parseProfile inFiles, outFiles
-  elif doFinish == 0: doFinish = -1
 
   if onlyDef and onlyExt:
     onlyDef = false
@@ -235,8 +234,14 @@ when isMainModule:
   for key, val in overrideContext:
     context.put key, val
 
-  if readStdin:
-    context.addContext stdin.readAll
+  let stdoutput = renderStdin()
+  if stdoutput.len > 0:
+    defaultProfile = false
+    echo stdoutput
+
+  if defaultProfile and inFiles.len == 0 and ntrProfile.existsFile:
+    if doFinish == 0: doFinish = 1
+    ntrProfile.parseProfile inFiles, outFiles
 
   for i, file in inFiles:
     var output = ""
