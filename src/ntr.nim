@@ -1,4 +1,4 @@
-import strutils, sequtils, tables, os, ospaths, osproc, parseopt, strformat
+import strutils, sequtils, tables, os, ospaths, osproc, parseopt, strformat, terminal
 
 type Context = TableRef[string, string]
 
@@ -14,7 +14,6 @@ Options:
   -o, --out       add output file
   -p, --profile   specify profile file
   --noDefaultProfile, --nDP     disable default profile
-  --stdin         read input from stdin
   --override      specify context addition/overrides
   --backup        backup existing files
   -e, --empty     allow empty context
@@ -189,7 +188,6 @@ when isMainModule:
     doBackup = false
     doFinish = 0
     emptyContext = false
-    readStdin = false
 
   for kind, key, val in getopt():
     case kind
@@ -210,7 +208,6 @@ when isMainModule:
       of "d": onlyDef = true
       of "D": onlyExt = true
       of "empty", "e": emptyContext = true
-      of "stdin": readStdin = true
       of "f": doFinish = 1
       of "F": doFinish = -1
       of "help", "h": abortWith help, 0
@@ -245,7 +242,7 @@ when isMainModule:
   if not emptyContext and context.len == 0:
     abortWith "Empty context"
 
-  if readStdin:
+  if not stdin.isatty:
     let stdoutput = renderStdin context
     if stdoutput.len > 0:
       defaultProfile = false
