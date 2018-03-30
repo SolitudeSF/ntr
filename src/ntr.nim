@@ -17,6 +17,7 @@ Options:
   --override      specify context addition/overrides
   --backup        backup existing files
   -e, --empty     allow empty context
+  -E              force empty context
   -d              only use files from ntrDirectory
   -D              never use files from ntrDirectory
   -h, --help      print this message
@@ -188,6 +189,7 @@ when isMainModule:
     doBackup = false
     doFinish = 0
     emptyContext = false
+    forceEmpty = false
 
   for kind, key, val in getopt():
     case kind
@@ -208,6 +210,9 @@ when isMainModule:
       of "d": onlyDef = true
       of "D": onlyExt = true
       of "empty", "e": emptyContext = true
+      of "E":
+        forceEmpty = true
+        emptyContext = true
       of "f": doFinish = 1
       of "F": doFinish = -1
       of "help", "h": abortWith help, 0
@@ -225,19 +230,20 @@ when isMainModule:
     onlyDef = false
     onlyExt = false
 
-  if not onlyExt and existsFile ntrContexts / "default":
-    context.addContextFile ntrContexts / "default"
+  if not forceEmpty:
+    if not onlyExt and existsFile ntrContexts / "default":
+      context.addContextFile ntrContexts / "default"
 
-  for file in contextFiles:
-    if not onlyDef and existsFile file:
-      context.addContextFile file
-    elif not onlyExt and existsFile ntrContexts / file:
-      context.addContextFile ntrContexts / file
-    else:
-      abortWith &"File {file} does not exist"
+    for file in contextFiles:
+      if not onlyDef and existsFile file:
+        context.addContextFile file
+      elif not onlyExt and existsFile ntrContexts / file:
+        context.addContextFile ntrContexts / file
+      else:
+        abortWith &"File {file} does not exist"
 
-  for key, val in overrideContext:
-    context.put key, val
+    for key, val in overrideContext:
+      context.put key, val
 
   if not emptyContext and context.len == 0:
     abortWith "Empty context"
