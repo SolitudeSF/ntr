@@ -198,7 +198,7 @@ when isMainModule:
       of "in", "i": inFiles.add val
       of "out", "o": outFiles.add val
       of "profile", "p": profileFile = val
-      of "override":
+      of "override", "r":
         let t = val.split(':', 1)
         if t.len == 2:
           overrideContext.parseId t[0].strip, t[1].strip
