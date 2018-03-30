@@ -123,41 +123,41 @@ proc parseCmd(s: string, c: Context): string =
     c[s]
   else: ""
 
-template renderRoutine(r: var string): untyped =
+template renderRoutine(res: var string, t: string): untyped =
   var
-    i = line.high
-    opens = newSeq[int]()
-    res = line
+    i = t.high
+    os = newSeq[int]()
+    r = t
   while true:
-    let open = line.rfind("{{", i)
-    if open != -1:
-      i = open - 1
-      opens.add open
+    let o = r.rfind("{{", i)
+    if o != -1:
+      i = o - 1
+      os.add o
     else: break
-  for o in opens:
-    let close = res.find("}}", o)
+  for o in os:
+    let close = r.find("}}", o)
     if close != -1:
-      res = res[0..<o] &
-            res[o + 2..<close].strip.parseCmd(c) &
-            res[close + 2..^1]
-  r &= res & "\p"
+      r = r[0..<o] &
+          r[o + 2..<close].strip.parseCmd(c) &
+          r[close + 2..^1]
+  res &= r & "\n"
 
 proc renderFile*(file: string, c = newContext()): string =
   result = ""
   for line in file.lines:
-    renderRoutine result
+    renderRoutine result, line
   result.setLen result.high
 
 proc renderStdin*(c = newContext()): string =
   result = ""
   for line in stdin.lines:
-    renderRoutine result
+    renderRoutine result, line
   result.setLen result.high
 
 proc render*(text: string, c = newContext()): string =
   result = ""
   for line in text.splitLines:
-    renderRoutine result
+    renderRoutine result, line
   result.setLen result.high
 
 proc parseProfile*(file: string, i, o: var seq[string]) =
