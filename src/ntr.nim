@@ -129,7 +129,7 @@ template renderRoutine(res: var string, t: string): untyped =
     i = t.high
     os = newSeq[int]()
     r = t
-  while true:
+  while i >= t.low:
     let o = r.rfind("{{", i)
     if o != -1:
       i = o - 1
@@ -141,7 +141,8 @@ template renderRoutine(res: var string, t: string): untyped =
       r = r[0..<o] &
           r[o + 2..<close].strip.parseCmd(c) &
           r[close + 2..^1]
-  res &= r & "\n"
+  res &= r
+  res &= "\p"
 
 proc renderFile*(file: string, c = newContext()): string =
   result = ""
