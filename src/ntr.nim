@@ -121,7 +121,7 @@ proc parseCmd(s: string, c: Context): string =
   if s.startsWith "$":
     getEnv s[1..^1]
   elif s.startsWith "e:":
-    strip execProcess quoteShellPosix strip s[2..^1]
+    strip execProcess strip s[2..^1]
   elif s in c:
     c[s]
   else: ""
