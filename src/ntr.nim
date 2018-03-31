@@ -13,7 +13,9 @@ Options:
   -i, --in        add input file from pwd or from ntrDirectory/templates
   -o, --out       add output file
   -p, --profile   specify profile file
-  --noDefaultProfile, --nDP     disable default profile
+  --noDefaultProfile, --ndp     disable default profile
+  --noDefaultContext, --ndc     disable default context
+  --noDefaultFinisher, --ndf    disable default finisher
   --override      specify context addition/overrides
   --backup        backup existing files
   -e, --empty     allow empty context
@@ -187,6 +189,8 @@ when isMainModule:
     onlyDef = false
     onlyExt = false
     defaultProfile = true
+    defaultContext = true
+    defaultFinisher = true
     doBackup = false
     doFinish = 0
     emptyContext = false
@@ -207,7 +211,9 @@ when isMainModule:
           overrideContext.parseId t[0].strip, t[1].strip
         else: abortWith &"Incorrect override: {val}"
       of "backup": doBackup = true
-      of "noDefaultProfile", "nDP": defaultProfile = false
+      of "noDefaultProfile", "ndp": defaultProfile = false
+      of "noDefaultContext", "ndc": defaultContext = false
+      of "noDefaultFinisher", "ndf": defaultFinisher = false
       of "d": onlyDef = true
       of "D": onlyExt = true
       of "empty", "e": emptyContext = true
@@ -232,7 +238,7 @@ when isMainModule:
     onlyExt = false
 
   if not forceEmpty:
-    if not onlyExt and existsFile ntrContexts / "default":
+    if defaultContext and not onlyExt and existsFile ntrContexts / "default":
       context.addContextFile ntrContexts / "default"
 
     for file in contextFiles:
@@ -297,7 +303,7 @@ when isMainModule:
         except:
           stderr.writeLine &"Couldn't run finisher {f}"
     let f = ntrFinishers / "default"
-    if existsFile f:
+    if defaultFinisher and existsFile f:
       try:
         let errC = execCmd f
         if errC != 0:
