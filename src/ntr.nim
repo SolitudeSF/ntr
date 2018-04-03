@@ -11,6 +11,7 @@ Arguments:
 
 Options:
   -i, --in        add input file from pwd or from ntrDirectory/templates
+  -I, --inplace   add input file and modify it in-place
   -o, --out       add output file
   -p, --profile   specify profile file
   --noDefaultProfile, --ndp     disable default profile
@@ -204,6 +205,9 @@ when isMainModule:
       case key
       of "in", "i": inFiles.add val
       of "out", "o": outFiles.add val
+      of "inplace", "I":
+        inFiles.add val
+        outFiles.add val
       of "profile", "p": profileFile = val
       of "override", "r":
         let t = val.split(':', 1)
