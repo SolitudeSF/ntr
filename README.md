@@ -1,4 +1,4 @@
-
+[![CircleCI](https://circleci.com/gh/SolitudeSF/ntr.svg?style=svg)](https://circleci.com/gh/SolitudeSF/ntr)
 - [x] Template substitution
   - [x] Context variable
   - [x] Enviroment variable
