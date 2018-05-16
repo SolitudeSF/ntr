@@ -4,4 +4,8 @@
   - [x] Enviroment variable
   - [x] Shell command
 - [x] Context parsing
-- [ ] Configuration
+- [ ] Configuration (?????)
+- [ ] Docs
+- [ ] Being concise and intuitive
+
+i dont even know
