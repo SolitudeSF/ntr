@@ -41,17 +41,17 @@ proc put[A, B](t: var TableRef[A, B] | Table[A, B], k: A, v: B) {.inline.} =
   if k in t: t[k] = v
   else: t.add k, v
 
-proc leadWs(s: string): int =
+func leadWs(s: string): int =
   for c in s:
     if c in Whitespace: inc result else: break
 
-proc isIdentifier(s: string): bool =
+func isIdentifier(s: string): bool =
   for c in s:
     if c in illegalChars:
       return false
   true
 
-proc isExportable(s: string): bool =
+func isExportable(s: string): bool =
   if s[0] in IdentStartChars:
     for i in 1..<s.high:
       if s[i] notin IdentChars:
