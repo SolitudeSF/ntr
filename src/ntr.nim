@@ -1,6 +1,6 @@
-import strutils, sequtils, tables, os, ospaths, osproc, parseopt, strformat, terminal
+import strutils, sequtils, tables, os, ospaths, osproc, parseopt, strformat, strtabs, terminal
 
-type Context = TableRef[string, string]
+type Context = StringTableRef
 
 const
   help = """
@@ -35,11 +35,7 @@ Specifying both -d and -D negates both options.
 
 proc abortWith(s: string, n = 1) = stderr.writeLine s; quit n
 
-proc newContext*: Context = newTable[string, string]()
-
-proc put[A, B](t: var TableRef[A, B] | Table[A, B], k: A, v: B) {.inline.} =
-  if k in t: t[k] = v
-  else: t.add k, v
+func newContext*: Context = newStringTable()
 
 func leadWs(s: string): int =
   for c in s:
@@ -66,9 +62,9 @@ proc parseId(c: var Context, k, v: string, p = "") {.inline.} =
     var k = k[0..^2]
     k = k.strip(trailing = true)
     putEnv k, v
-    c.put p & k, v
+    c[p & k] = v
   elif k.isIdentifier:
-    c.put p & k, v
+    c[p & k] = v
 
 template contextRoutine(c: var Context): untyped =
   let
@@ -254,7 +250,7 @@ when isMainModule:
         abortWith &"File {file} does not exist"
 
     for key, val in overrideContext:
-      context.put key, val
+      context[key] = val
 
   if not emptyContext and context.len == 0:
     abortWith "Empty context"
