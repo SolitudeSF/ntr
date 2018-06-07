@@ -173,6 +173,7 @@ when isMainModule:
         "XDG_CONFIG_HOME".getEnv / "ntr"
       else: getConfigDir().expandTilde / "ntr"
     ntrProfile = ntrDir / "default"
+    ntrProfiles = ntrDir / "profiles"
     ntrTemplates = ntrDir / "templates"
     ntrContexts = ntrDir / "contexts"
     ntrFinishers = ntrDir / "finishers"
@@ -227,15 +228,19 @@ when isMainModule:
       else: abortWith &"Couldn't parse command line argument: {key}"
     of cmdEnd: discard
 
-  if profileFile.existsFile:
-    profileFile.parseProfile inFiles, outFiles
-
-  if inFiles.len != outFiles.len:
-    abortWith "Input/output files mismatch"
-
   if onlyDef and onlyExt:
     onlyDef = false
     onlyExt = false
+
+  if not onlyDef and existsFile profileFile:
+    parseProfile profileFile, inFiles, outFiles
+  elif not onlyExt and existsFile ntrProfiles / profileFile:
+    parseProfile ntrProfiles / profileFile, inFiles, outFiles
+  else:
+    abortWith &"File {profileFile} does not exist"
+
+  if inFiles.len != outFiles.len:
+    abortWith "Input/output files mismatch"
 
   if not forceEmpty:
     if defaultContext and not onlyExt and existsFile ntrContexts / "default":
