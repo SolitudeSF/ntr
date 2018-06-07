@@ -168,31 +168,33 @@ proc parseProfile*(file: string, i, o: var seq[string]) =
 
 when isMainModule:
   let
-    ntrDir =
+    ntrDir         =
       if existsEnv "XDG_CONFIG_HOME":
         "XDG_CONFIG_HOME".getEnv / "ntr"
       else: getConfigDir().expandTilde / "ntr"
-    ntrProfile = ntrDir / "default"
-    ntrProfiles = ntrDir / "profiles"
-    ntrTemplates = ntrDir / "templates"
-    ntrContexts = ntrDir / "contexts"
-    ntrFinishers = ntrDir / "finishers"
+    ntrProfiles    = ntrDir / "profiles"
+    ntrDefProfile  = ntrProfiles / "default"
+    ntrContexts    = ntrDir / "contexts"
+    ntrDefContext  = ntrContexts / "default"
+    ntrFinishers   = ntrDir / "finishers"
+    ntrDefFinisher = ntrFinishers / "default"
+    ntrTemplates   = ntrDir / "templates"
   var
-    inFiles = newSeq[string]()
-    outFiles = newSeq[string]()
-    contextFiles = newSeq[string]()
-    profileFile = ""
-    context = newContext()
+    inFiles         = newSeq[string]()
+    outFiles        = newSeq[string]()
+    contextFiles    = newSeq[string]()
+    profileFile     = ""
+    context         = newContext()
     overrideContext = newContext()
-    onlyDef = false
-    onlyExt = false
-    defaultProfile = true
-    defaultContext = true
+    onlyDef         = false
+    onlyExt         = false
+    defaultProfile  = true
+    defaultContext  = true
     defaultFinisher = true
-    doBackup = false
-    doFinish = 0
-    emptyContext = false
-    forceEmpty = false
+    doBackup        = false
+    doFinish        = 0
+    emptyContext    = false
+    forceEmpty      = false
 
   for kind, key, val in getopt():
     case kind
@@ -243,8 +245,8 @@ when isMainModule:
     abortWith "Input/output files mismatch"
 
   if not forceEmpty:
-    if defaultContext and not onlyExt and existsFile ntrContexts / "default":
-      context.addContextFile ntrContexts / "default"
+    if defaultContext and not onlyExt and existsFile ntrDefContext:
+      context.addContextFile ntrDefContext
 
     for file in contextFiles:
       if not onlyDef and existsFile file:
@@ -266,9 +268,9 @@ when isMainModule:
       defaultProfile = false
       echo stdoutput
 
-  if defaultProfile and inFiles.len == 0 and ntrProfile.existsFile:
+  if defaultProfile and inFiles.len == 0 and ntrDefProfile.existsFile:
     if doFinish == 0: doFinish = 1
-    ntrProfile.parseProfile inFiles, outFiles
+    ntrDefProfile.parseProfile inFiles, outFiles
 
   for i, file in inFiles:
     var output = ""
@@ -307,10 +309,9 @@ when isMainModule:
           stderr.writeLine &"Finisher {f} exited with {errC}"
         except:
           stderr.writeLine &"Couldn't run finisher {f}"
-    let f = ntrFinishers / "default"
-    if defaultFinisher and existsFile f:
+    if defaultFinisher and existsFile ntrDefFinisher:
       try:
-        let errC = execCmd f
+        let errC = execCmd ntrDefFinisher
         if errC != 0:
           stderr.writeLine &"Default finisher exited with {errC}"
       except:
