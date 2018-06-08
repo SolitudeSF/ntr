@@ -33,6 +33,8 @@ Specifying both -d and -D negates both options.
   version = &"ntr {gitrev} compiled at {CompileDate} {CompileTime}"
   illegalChars = {'.', '{', '}', ':', '$'} + Whitespace
 
+let emptyContext = newStringTable()
+
 proc abortWith(s: string, n = 1) = stderr.writeLine s; quit n
 
 func newContext*: Context = newStringTable()
@@ -55,7 +57,7 @@ func isExportable(s: string): bool =
     true
   else: false
 
-proc render*(text: string, c = newContext()): string
+proc render*(text: string, c = emptyContext): string
 
 proc parseId(c: var Context, k, v: string, p = "") {.inline.} =
   if k.endsWith('*') and k.isExportable:
@@ -143,19 +145,19 @@ template renderRoutine(res: var string, t: string): untyped =
   res &= r
   res &= "\p"
 
-proc renderFile*(file: string, c = newContext()): string =
+proc renderFile*(file: string, c = emptyContext): string =
   result = ""
   for line in file.lines:
     renderRoutine result, line
   result.setLen result.high
 
-proc renderStdin*(c = newContext()): string =
+proc renderStdin*(c = emptyContext): string =
   result = ""
   for line in stdin.lines:
     renderRoutine result, line
   result.setLen result.high
 
-proc render*(text: string, c = newContext()): string =
+proc render*(text: string, c = emptyContext): string =
   result = ""
   for line in text.splitLines:
     renderRoutine result, line
@@ -180,21 +182,21 @@ when isMainModule:
     ntrDefFinisher = ntrFinishers / "default"
     ntrTemplates   = ntrDir / "templates"
   var
-    inFiles         = newSeq[string]()
-    outFiles        = newSeq[string]()
-    contextFiles    = newSeq[string]()
-    profileFile     = ""
-    context         = newContext()
-    overrideContext = newContext()
-    onlyDef         = false
-    onlyExt         = false
-    defaultProfile  = true
-    defaultContext  = true
-    defaultFinisher = true
-    doBackup        = false
-    doFinish        = 0
-    emptyContext    = false
-    forceEmpty      = false
+    inFiles           = newSeq[string]()
+    outFiles          = newSeq[string]()
+    contextFiles      = newSeq[string]()
+    profileFile       = ""
+    context           = newContext()
+    overrideContext   = newContext()
+    onlyDef           = false
+    onlyExt           = false
+    defaultProfile    = true
+    defaultContext    = true
+    defaultFinisher   = true
+    doBackup          = false
+    doFinish          = 0
+    allowEmptyContext = false
+    forceEmpty        = false
 
   for kind, key, val in getopt():
     case kind
@@ -219,10 +221,10 @@ when isMainModule:
       of "noDefaultFinisher", "ndf": defaultFinisher = false
       of "d": onlyDef = true
       of "D": onlyExt = true
-      of "empty", "e": emptyContext = true
+      of "empty", "e": allowEmptyContext = true
       of "E":
         forceEmpty = true
-        emptyContext = true
+        allowEmptyContext = true
       of "f": doFinish = 1
       of "F": doFinish = -1
       of "help", "h": abortWith help, 0
@@ -259,7 +261,7 @@ when isMainModule:
     for key, val in overrideContext:
       context[key] = val
 
-  if not emptyContext and context.len == 0:
+  if not allowEmptyContext and context.len == 0:
     abortWith "Empty context"
 
   if not stdin.isatty:
