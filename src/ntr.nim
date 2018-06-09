@@ -1,4 +1,4 @@
-import strutils, sequtils, tables, os, ospaths, osproc, parseopt, strformat, strtabs, terminal
+import strutils, strformat, strtabs, os, ospaths, osproc, sequtils, parseopt, terminal
 
 type Context = StringTableRef
 
@@ -236,12 +236,13 @@ when isMainModule:
     onlyDef = false
     onlyExt = false
 
-  if not onlyDef and existsFile profileFile:
-    parseProfile profileFile, inFiles, outFiles
-  elif not onlyExt and existsFile ntrProfiles / profileFile:
-    parseProfile ntrProfiles / profileFile, inFiles, outFiles
-  else:
-    abortWith &"File {profileFile} does not exist"
+  if profileFile.len > 0:
+    if not onlyDef and existsFile profileFile:
+      parseProfile profileFile, inFiles, outFiles
+    elif not onlyExt and existsFile ntrProfiles / profileFile:
+      parseProfile ntrProfiles / profileFile, inFiles, outFiles
+    else:
+      abortWith &"File {profileFile} does not exist"
 
   if inFiles.len != outFiles.len:
     abortWith "Input/output files mismatch"
