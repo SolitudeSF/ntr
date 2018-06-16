@@ -10,3 +10,5 @@
 - [ ] Being concise and intuitive
 
 i dont even know
+
+[Example ntr file organisation/usage](https://github.com/SolitudeSF/dot/tree/master/ntr)
