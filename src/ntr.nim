@@ -1,4 +1,4 @@
-import strutils, strformat, strtabs, os, ospaths, osproc, sequtils, parseopt, terminal
+import strutils, strformat, strtabs, os, osproc, sequtils, parseopt, terminal
 
 type Context = StringTableRef
 
