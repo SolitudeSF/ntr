@@ -4,8 +4,8 @@ services:
   - docker
 env:
   matrix:
-      IMG=yglukhov/nim-base
-      IMG=nimlang/nim
+    - IMG=yglukhov/nim-base
+    - IMG=nimlang/nim
 before_install:
   - docker pull "$IMG"
 script:
