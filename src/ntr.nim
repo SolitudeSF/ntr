@@ -57,6 +57,7 @@ func isExportable(s: string): bool =
     true
   else: false
 
+proc renderFile*(file: string, c = emptyContext): string
 proc render*(text: string, c = emptyContext): string
 
 proc parseId(c: var Context, k, v: string, p = "") {.inline.} =
@@ -87,7 +88,7 @@ template contextRoutine(c: var Context): untyped =
     else:
       let
         t = l.split(':', 1)
-        v = t[1].render.strip
+        v = t[1].strip
       for k in t[0].split ',':
          parseId c, k.strip, v, prefix
 
@@ -96,7 +97,8 @@ proc addContextFile*(c: var Context, file: string) =
     prefixes = newSeq[string]()
     prefix = ""
     pad = newSeq[int]()
-  for line in file.lines:
+  for t in file.lines:
+    let line = t.render
     contextRoutine c
 
 proc addContext*(c: var Context, text: string) =
@@ -104,7 +106,8 @@ proc addContext*(c: var Context, text: string) =
     prefixes = newSeq[string]()
     prefix = ""
     pad = newSeq[int]()
-  for line in text.splitLines:
+  for t in text.splitLines:
+    let line = t.render
     contextRoutine c
 
 proc getContext*(s: string): Context =
@@ -113,7 +116,8 @@ proc getContext*(s: string): Context =
     prefixes = newSeq[string]()
     prefix = ""
     pad = newSeq[int]()
-  for line in s.splitLines:
+  for t in s.splitLines:
+    let line = t.render
     contextRoutine result
 
 proc parseCmd(s: string, c: Context): string =
@@ -142,8 +146,7 @@ template renderRoutine(res: var string, t: string): untyped =
       r = r[0..<o] &
           r[o + 2..<close].strip.parseCmd(c) &
           r[close + 2..^1]
-  res &= r
-  res &= "\p"
+  res &= r & "\p"
 
 proc renderFile*(file: string, c = emptyContext): string =
   result = ""
@@ -266,10 +269,8 @@ when isMainModule:
     abortWith "Empty context"
 
   if not stdin.isatty:
-    let stdoutput = renderStdin context
-    if stdoutput.len > 0:
-      defaultProfile = false
-      echo stdoutput
+    defaultProfile = false
+    echo renderStdin context
 
   if defaultProfile and inFiles.len == 0 and ntrDefProfile.existsFile:
     if doFinish == 0: doFinish = 1
