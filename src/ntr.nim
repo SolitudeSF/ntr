@@ -178,12 +178,12 @@ when isMainModule:
         "XDG_CONFIG_HOME".getEnv / "ntr"
       else: getConfigDir().expandTilde / "ntr"
     ntrProfiles    = ntrDir / "profiles"
-    ntrDefProfile  = ntrProfiles / "default"
     ntrContexts    = ntrDir / "contexts"
-    ntrDefContext  = ntrContexts / "default"
-    ntrFinishers   = ntrDir / "finishers"
-    ntrDefFinisher = ntrFinishers / "default"
     ntrTemplates   = ntrDir / "templates"
+    ntrFinishers   = ntrDir / "finishers"
+    ntrDefProfile  = ntrProfiles / "default"
+    ntrDefContext  = ntrContexts / "default"
+    ntrDefFinisher = ntrFinishers / "default"
   var
     inFiles           = newSeq[string]()
     outFiles          = newSeq[string]()
@@ -245,7 +245,7 @@ when isMainModule:
     elif not onlyExt and existsFile ntrProfiles / profileFile:
       parseProfile ntrProfiles / profileFile, inFiles, outFiles
     else:
-      abortWith &"File {profileFile} does not exist"
+      abortWith &"File `{profileFile}` does not exist"
 
   if inFiles.len != outFiles.len:
     abortWith "Input/output files mismatch"
@@ -260,7 +260,7 @@ when isMainModule:
       elif not onlyExt and existsFile ntrContexts / file:
         context.addContextFile ntrContexts / file
       else:
-        abortWith &"File {file} does not exist"
+        abortWith &"File `{file}` does not exist"
 
     for key, val in overrideContext:
       context[key] = val
@@ -283,25 +283,26 @@ when isMainModule:
     elif not onlyExt and existsFile ntrTemplates / file:
       output = (ntrTemplates / file).renderFile context
     else:
-      abortWith &"File {file} does not exist"
-    if outFiles[i] == "--":
+      abortWith &"File `{file}` does not exist"
+    let outfile = outFiles[i]
+    if outfile == "--":
       echo output
     else:
-      let dir = parentDir outFiles[i]
-      if doBackup and existsFile outFiles[i]:
+      let dir = parentDir outfile
+      if doBackup and existsFile outfile:
         try:
-          copyFileWithPermissions outFiles[i], outFiles[i] & ".bak"
+          copyFileWithPermissions outfile, outfile & ".bak"
         except:
-          abortWith &"Couldn't backup {outFiles[i]}."
+          abortWith &"Couldn't backup `{outfile}`."
       elif not existsDir dir:
         try:
           createDir dir
         except:
-          abortWith &"Couldn't create directory chain {dir}."
+          abortWith &"Couldn't create directory `{dir}`."
       try:
-        outFiles[i].writeFile output
+        outfile.writeFile output
       except:
-        abortWith &"Couldn't write to {outFiles[i]}."
+        abortWith &"Couldn't write to `{outfile}`."
 
   if doFinish == 1:
     for i in inFiles:
@@ -310,9 +311,9 @@ when isMainModule:
         try:
          let errC = execCmd f
          if errC != 0:
-          stderr.writeLine &"Finisher {f} exited with {errC}"
+          stderr.writeLine &"Finisher `{f}` exited with {errC}"
         except:
-          stderr.writeLine &"Couldn't run finisher {f}"
+          stderr.writeLine &"Couldn't run finisher `{f}`"
     if defaultFinisher and existsFile ntrDefFinisher:
       try:
         let errC = execCmd ntrDefFinisher
