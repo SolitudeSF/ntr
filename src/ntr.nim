@@ -125,6 +125,8 @@ proc parseCmd(s: string, c: Context): string =
     getEnv s[1..^1]
   elif s.startsWith "e:":
     strip execProcess strip s[2..^1]
+  elif s.startsWith "strip:":
+    strip s[6..^1], chars={'#'}
   elif s in c:
     c[s]
   else: ""
