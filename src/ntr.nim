@@ -90,7 +90,7 @@ template contextRoutine(c: var Context): untyped =
         t = l.split(':', 1)
         v = t[1].strip
       for k in t[0].split ',':
-         parseId c, k.strip, v, prefix
+        parseId c, k.strip, v, prefix
 
 proc addContextFile*(c: var Context, file: string) =
   var
@@ -126,7 +126,7 @@ proc parseCmd(s: string, c: Context): string =
   elif s.startsWith "e:":
     strip execProcess strip s[2..^1]
   elif s.startsWith "strip:":
-    strip s[6..^1], chars={'#'}
+    strip(s[6..^1], chars = {'#'})
   elif s in c:
     c[s]
   else: ""
@@ -311,9 +311,9 @@ when isMainModule:
       let f = ntrFinishers / i.extractFilename
       if existsFile f:
         try:
-         let errC = execCmd f
-         if errC != 0:
-          stderr.writeLine &"Finisher `{f}` exited with {errC}"
+          let errC = execCmd f
+          if errC != 0:
+            stderr.writeLine &"Finisher `{f}` exited with {errC}"
         except:
           stderr.writeLine &"Couldn't run finisher `{f}`"
     if defaultFinisher and existsFile ntrDefFinisher:
