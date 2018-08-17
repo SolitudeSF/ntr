@@ -175,10 +175,7 @@ proc parseProfile*(file: string, i, o: var seq[string]) =
 
 when isMainModule:
   let
-    ntrDir         =
-      if existsEnv "XDG_CONFIG_HOME":
-        "XDG_CONFIG_HOME".getEnv / "ntr"
-      else: getConfigDir().expandTilde / "ntr"
+    ntrDir         = getConfigDir() / "ntr"
     ntrProfiles    = ntrDir / "profiles"
     ntrContexts    = ntrDir / "contexts"
     ntrTemplates   = ntrDir / "templates"

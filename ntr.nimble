@@ -9,7 +9,7 @@ bin           = @["ntr"]
 
 # Dependencies
 
-requires "nim >= 0.18.0"
+requires "nim >= 0.18.1"
 
 task man, "Render manpage with scdoc":
   exec "scdoc < ntr.1.scd > ntr.1"
