@@ -32,6 +32,7 @@ Specifying both -d and -D negates both options.
   gitrev = staticExec "git describe --tags --long --dirty | sed -E 's/-.+-/ /'"
   version = &"ntr {gitrev} compiled at {CompileDate} {CompileTime}"
   illegalChars = {'.', '{', '}', ':', '$'} + Whitespace
+  envPrefix = "NTR_"
 
 let emptyContext = newStringTable()
 
@@ -62,9 +63,8 @@ proc render*(text: string, c = emptyContext): string
 
 proc parseId(c: var Context, k, v: string, p = "") {.inline.} =
   if k.endsWith('*') and k.isExportable:
-    var k = k[0..^2]
-    k = k.strip(trailing = true)
-    putEnv k, v
+    let k = k[0..^2].strip(trailing = true)
+    putEnv(envPrefix & k, v)
     c[p & k] = v
   elif k.isIdentifier:
     c[p & k] = v
