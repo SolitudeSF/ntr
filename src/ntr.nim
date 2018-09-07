@@ -121,53 +121,23 @@ proc getContext*(s: string): Context =
     let line = t.render
     contextRoutine result
 
-proc cmdLighten(c, v: string): string =
-  try:
-    if c.startsWith "#":
-      "#" & c.parseHtmlHex.lighten(v.parseFloat).toHex
-    else: c.parseHex.lighten(v.parseFloat).toHex
-  except ValueError:
-    stderr.writeLine &"Couldn't parse value: {v}"
-    ""
-  except InvalidColor:
-    stderr.writeLine &"Couldn't parse color: {c}"
-    ""
+template cmdColor(a): untyped =
+  proc `cmd a`(c, v: string): string =
+    try:
+      if c.startsWith "#":
+        "#" & c.parseHtmlHex.`a`(v.parseFloat).toHex
+      else: c.parseHex.`a`(v.parseFloat).toHex
+    except ValueError:
+      stderr.writeLine "Couldn't parse value: " & v
+      ""
+    except InvalidColor:
+      stderr.writeLine "Couldn't parse color: " & c
+      ""
 
-proc cmdDarken(c, v: string): string =
-  try:
-    if c.startsWith "#":
-      "#" & c.parseHtmlHex.darken(v.parseFloat).toHex
-    else: c.parseHex.darken(v.parseFloat).toHex
-  except ValueError:
-    stderr.writeLine &"Couldn't parse value: {v}"
-    ""
-  except InvalidColor:
-    stderr.writeLine &"Couldn't parse color: {c}"
-    ""
-
-proc cmdSaturate(c, v: string): string =
-  try:
-    if c.startsWith "#":
-      "#" & c.parseHtmlHex.saturate(v.parseFloat).toHex
-    else: c.parseHex.saturate(v.parseFloat).toHex
-  except ValueError:
-    stderr.writeLine &"Couldn't parse value: {v}"
-    ""
-  except InvalidColor:
-    stderr.writeLine &"Couldn't parse color: {c}"
-    ""
-
-proc cmdDesaturate(c, v: string): string =
-  try:
-    if c.startsWith "#":
-      "#" & c.parseHtmlHex.desaturate(v.parseFloat).toHex
-    else: c.parseHex.desaturate(v.parseFloat).toHex
-  except ValueError:
-    stderr.writeLine &"Couldn't parse value: {v}"
-    ""
-  except InvalidColor:
-    stderr.writeLine &"Couldn't parse color: {c}"
-    ""
+cmdColor lighten
+cmdColor darken
+cmdColor saturate
+cmdColor desaturate
 
 proc parseCmd(s: string, c: Context): string =
   if s.startsWith "$":
