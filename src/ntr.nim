@@ -34,6 +34,7 @@ Specifying both -d and -D negates both options.
   version = &"ntr {gitrev} compiled at {CompileDate} {CompileTime}"
   illegalChars = {'.', '{', '}', ':', '$'} + Whitespace
   envPrefix = "NTR_"
+  emptySet: set[char] = {}
 
 let emptyContext = newStringTable()
 
@@ -145,19 +146,21 @@ proc parseCmd(s: string, c: Context): string =
   elif s.startsWith "e:":
     strip execProcess strip s[2..^1]
   elif s.startsWith "strip:":
-    let a = s[6..^1]
-    strip((if a in c: c[a] else: a), chars = {'#'})
+    let
+      a = s[6..^1].split ':'
+      b = (if a.len > 0: a[1].foldl(a + {b}, emptySet) else: Whitespace)
+    strip((if a[0] in c: c[a[0]] else: a[0]), chars = b)
   elif s.startsWith "lighten:":
-    let a = s[8..^1].split(':')
+    let a = s[8..^1].split ':'
     cmdLighten a[0], a[1]
   elif s.startsWith "darken:":
-    let a = s[7..^1].split(':')
+    let a = s[7..^1].split ':'
     cmdDarken a[0], a[1]
   elif s.startsWith "saturate:":
-    let a = s[9..^1].split(':')
+    let a = s[9..^1].split ':'
     cmdSaturate a[0], a[1]
   elif s.startsWith "desaturate:":
-    let a = s[11..^1].split(':')
+    let a = s[11..^1].split ':'
     cmdDesaturate a[0], a[1]
   elif s in c:
     c[s]
