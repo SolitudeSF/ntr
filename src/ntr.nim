@@ -1,4 +1,5 @@
 import strutils, strformat, strtabs, os, osproc, sequtils, parseopt, terminal
+import chroma
 
 type Context = StringTableRef
 
@@ -120,6 +121,24 @@ proc getContext*(s: string): Context =
     let line = t.render
     contextRoutine result
 
+proc cmdLighten(c, v: string): string =
+  try:
+    if c.startsWith "#":
+      "#" & c.parseHtmlHex.lighten(v.parseFloat).toHex
+    else: c.parseHex.lighten(v.parseFloat).toHex
+  except InvalidColor:
+    stderr.writeLine "Couldn't parse color values"
+    ""
+
+proc cmdDarken(c, v: string): string =
+  try:
+    if c.startsWith "#":
+      "#" & c.parseHtmlHex.darken(v.parseFloat).toHex
+    else: c.parseHex.darken(v.parseFloat).toHex
+  except InvalidColor:
+    stderr.writeLine "Couldn't parse color values"
+    ""
+
 proc parseCmd(s: string, c: Context): string =
   if s.startsWith "$":
     getEnv s[1..^1]
@@ -127,6 +146,12 @@ proc parseCmd(s: string, c: Context): string =
     strip execProcess strip s[2..^1]
   elif s.startsWith "strip:":
     strip(s[6..^1], chars = {'#'})
+  elif s.startsWith "lighten:":
+    let cmd = s[8..^1].split(':')
+    cmdLighten cmd[0], cmd[1]
+  elif s.startsWith "darken:":
+    let cmd = s[7..^1].split(':')
+    cmdDarken cmd[0], cmd[1]
   elif s in c:
     c[s]
   else: ""
