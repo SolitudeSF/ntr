@@ -163,19 +163,20 @@ proc parseCmd(s: string, c: Context): string =
   elif s.startsWith "e:":
     strip execProcess strip s[2..^1]
   elif s.startsWith "strip:":
-    strip(s[6..^1], chars = {'#'})
+    let a = s[6..^1]
+    strip((if a in c: c[a] else: a), chars = {'#'})
   elif s.startsWith "lighten:":
-    let cmd = s[8..^1].split(':')
-    cmdLighten cmd[0], cmd[1]
+    let a = s[8..^1].split(':')
+    cmdLighten a[0], a[1]
   elif s.startsWith "darken:":
-    let cmd = s[7..^1].split(':')
-    cmdDarken cmd[0], cmd[1]
+    let a = s[7..^1].split(':')
+    cmdDarken a[0], a[1]
   elif s.startsWith "saturate:":
-    let cmd = s[9..^1].split(':')
-    cmdSaturate cmd[0], cmd[1]
+    let a = s[9..^1].split(':')
+    cmdSaturate a[0], a[1]
   elif s.startsWith "desaturate:":
-    let cmd = s[11..^1].split(':')
-    cmdDesaturate cmd[0], cmd[1]
+    let a = s[11..^1].split(':')
+    cmdDesaturate a[0], a[1]
   elif s in c:
     c[s]
   else: ""
