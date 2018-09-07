@@ -10,4 +10,4 @@ before_install:
   - docker pull "$IMG"
 script:
   - docker run -v "$(pwd):/project" -w /project "$IMG" nim --version
-  - docker run -v "$(pwd):/project" -w /project "$IMG" nimble install
+  - docker run -v "$(pwd):/project" -w /project "$IMG" nimble install -y
