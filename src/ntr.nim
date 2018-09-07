@@ -139,6 +139,24 @@ proc cmdDarken(c, v: string): string =
     stderr.writeLine "Couldn't parse color values"
     ""
 
+proc cmdSaturate(c, v: string): string =
+  try:
+    if c.startsWith "#":
+      "#" & c.parseHtmlHex.saturate(v.parseFloat).toHex
+    else: c.parseHex.saturate(v.parseFloat).toHex
+  except InvalidColor:
+    stderr.writeLine "Couldn't parse color values"
+    ""
+
+proc cmdDesaturate(c, v: string): string =
+  try:
+    if c.startsWith "#":
+      "#" & c.parseHtmlHex.desaturate(v.parseFloat).toHex
+    else: c.parseHex.desaturate(v.parseFloat).toHex
+  except InvalidColor:
+    stderr.writeLine "Couldn't parse color values"
+    ""
+
 proc parseCmd(s: string, c: Context): string =
   if s.startsWith "$":
     getEnv s[1..^1]
@@ -152,6 +170,12 @@ proc parseCmd(s: string, c: Context): string =
   elif s.startsWith "darken:":
     let cmd = s[7..^1].split(':')
     cmdDarken cmd[0], cmd[1]
+  elif s.startsWith "saturate:":
+    let cmd = s[9..^1].split(':')
+    cmdSaturate cmd[0], cmd[1]
+  elif s.startsWith "desaturate:":
+    let cmd = s[11..^1].split(':')
+    cmdDesaturate cmd[0], cmd[1]
   elif s in c:
     c[s]
   else: ""
