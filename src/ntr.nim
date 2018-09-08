@@ -32,7 +32,7 @@ Specifying both -d and -D negates both options.
 """
   gitrev = staticExec "git describe --tags --long --dirty | sed -E 's/-.+-/ /'"
   version = &"ntr {gitrev} compiled at {CompileDate} {CompileTime}"
-  illegalChars = {'.', '{', '}', ':', '$'} + Whitespace
+  illegalChars = {'.', '{', '}', ':', '$', '|'} + Whitespace
   envPrefix = "NTR_"
   emptySet: set[char] = {}
 
@@ -162,6 +162,13 @@ proc parseCmd(s: string, c: Context): string =
   elif s.startsWith "desaturate:":
     let a = s[11..^1].split ':'
     cmdDesaturate a[0], a[1]
+  elif s.count('|') > 0:
+    let a = s.split '|'
+    if a[0] in c:
+      c[a[0]]
+    elif a.len > 0:
+      a[1]
+    else: ""
   elif s in c:
     c[s]
   else: ""
