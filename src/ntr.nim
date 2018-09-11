@@ -32,7 +32,7 @@ Specifying both -d and -D negates both options.
 """
   gitrev = staticExec "git describe --tags --long --dirty | sed -E 's/-.+-/ /'"
   version = &"ntr {gitrev} compiled at {CompileDate} {CompileTime}"
-  illegalChars = {'.', '{', '}', ':', '$', '|'} + Whitespace
+  illegalChars = {'.', '{', '}', '<', '>', ':', '$', '|'} + Whitespace
   envPrefix = "NTR_"
   emptySet: set[char] = {}
 
@@ -179,13 +179,13 @@ template renderRoutine(res: var string, t: string): untyped =
     os = newSeq[int]()
     r = t
   while i >= t.low:
-    let o = r.rfind("{{", i)
+    let o = r.rfind("<{", i)
     if o != -1:
       i = o - 1
       os.add o
     else: break
   for o in os:
-    let close = r.find("}}", o)
+    let close = r.find("}>", o)
     if close != -1:
       r = r[0..<o] &
           r[o + 2..<close].strip.parseCmd(c) &
