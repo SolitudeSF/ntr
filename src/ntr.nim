@@ -22,6 +22,8 @@ Options:
   --backup        backup existing files
   -e, --empty     allow empty context
   -E              force empty context
+  -f              force execution of finishers
+  -F              disable execution of finishers
   -d              only use files from ntrDirectory
   -D              never use files from ntrDirectory
   -h, --help      print this message
