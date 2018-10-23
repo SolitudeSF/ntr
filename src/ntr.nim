@@ -195,19 +195,16 @@ template renderRoutine(res: var string, t: string): untyped =
   res &= r & "\p"
 
 proc renderFile*(file: string, c = emptyContext): string =
-  result = ""
   for line in file.lines:
     renderRoutine result, line
   result.setLen result.high
 
 proc renderStdin*(c = emptyContext): string =
-  result = ""
   for line in stdin.lines:
     renderRoutine result, line
   result.setLen result.high
 
 proc render*(text: string, c = emptyContext): string =
-  result = ""
   for line in text.splitLines:
     renderRoutine result, line
   result.setLen result.high
