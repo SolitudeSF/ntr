@@ -175,39 +175,35 @@ proc parseCmd(s: string, c: Context): string =
     c[s]
   else: ""
 
-template renderRoutine(res: var string, t: string): untyped =
-  var
-    i = t.high
-    os = newSeq[int]()
-    r = t
-  while i >= t.low:
-    let o = r.rfind("<{", i)
-    if o != -1:
-      i = o - 1
-      os.add o
-    else: break
-  for o in os:
-    let close = r.find("}>", o)
-    if close != -1:
-      r = r[0..<o] &
-          r[o + 2..<close].strip.parseCmd(c) &
-          r[close + 2..^1]
-  res &= r & "\p"
+template renderRoutine(lines: untyped): untyped =
+  for line in lines:
+    var
+      r = line
+      i = line.high
+      os = newSeq[int]()
+    while i >= line.low:
+      let o = r.rfind("<{", i)
+      if o != -1:
+        i = o - 1
+        os.add o
+      else: break
+    for o in os:
+      let close = r.find("}>", o)
+      if close != -1:
+        r = r[0..<o] &
+            r[o + 2..<close].strip.parseCmd(c) &
+            r[close + 2..^1]
+    result &= r & "\p"
+  result.setLen result.high
 
 proc renderFile*(file: string, c = emptyContext): string =
-  for line in file.lines:
-    renderRoutine result, line
-  result.setLen result.high
+  renderRoutine file.lines
 
 proc renderStdin*(c = emptyContext): string =
-  for line in stdin.lines:
-    renderRoutine result, line
-  result.setLen result.high
+  renderRoutine stdin.lines
 
 proc render*(text: string, c = emptyContext): string =
-  for line in text.splitLines:
-    renderRoutine result, line
-  result.setLen result.high
+  renderRoutine text.splitLines
 
 proc parseProfile*(file: string, i, o: var seq[string]) =
   for k, v in file.renderFile.getContext:
