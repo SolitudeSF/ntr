@@ -40,7 +40,7 @@ Specifying both -d and -D negates both options.
 
 proc abortWith(s: string, n = 1) = stderr.writeLine s; quit n
 
-func newContext*: Context = newStringTable()
+func newContext: Context = newStringTable()
 
 func leadWs(s: string): int =
   for c in s:
@@ -60,8 +60,8 @@ func isExportable(s: string): bool =
     true
   else: false
 
-proc renderFile*(file: string, c = newContext()): string
-proc render*(text: string, c = newContext()): string
+proc renderFile(file: string, c = newContext()): string
+proc render(text: string, c = newContext()): string
 
 proc parseId(c: var Context, k, v: string, p = "") {.inline.} =
   if k.endsWith('*') and k.isExportable:
@@ -94,7 +94,7 @@ template contextRoutine(c: var Context): untyped =
       for k in t[0].split ',':
         parseId c, k.strip, v, prefix
 
-proc addContextFile*(c: var Context, file: string) =
+proc addContextFile(c: var Context, file: string) =
   var
     prefixes = newSeq[string]()
     prefix = ""
@@ -103,7 +103,7 @@ proc addContextFile*(c: var Context, file: string) =
     let line = t.render
     contextRoutine c
 
-proc addContext*(c: var Context, text: string) =
+proc addContext(c: var Context, text: string) =
   var
     prefixes = newSeq[string]()
     prefix = ""
@@ -112,7 +112,7 @@ proc addContext*(c: var Context, text: string) =
     let line = t.render
     contextRoutine c
 
-proc getContext*(s: string): Context =
+proc getContext(s: string): Context =
   result = newContext()
   var
     prefixes = newSeq[string]()
@@ -194,16 +194,16 @@ template renderRoutine(lines: untyped): untyped =
     result &= r & "\p"
   result.setLen result.high
 
-proc renderFile*(file: string, c = newContext()): string =
+proc renderFile(file: string, c = newContext()): string =
   renderRoutine file.lines
 
-proc renderStdin*(c = newContext()): string =
+proc renderStdin(c = newContext()): string =
   renderRoutine stdin.lines
 
-proc render*(text: string, c = newContext()): string =
+proc render(text: string, c = newContext()): string =
   renderRoutine text.splitLines
 
-proc parseProfile*(file: string, i, o: var seq[string]) =
+proc parseProfile(file: string, i, o: var seq[string]) =
   for k, v in file.renderFile.getContext:
     i.add k
     o.add v
