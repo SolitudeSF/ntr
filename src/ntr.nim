@@ -103,15 +103,6 @@ proc addContextFile(c: var Context, file: string) =
     let line = t.render
     contextRoutine c
 
-proc addContext(c: var Context, text: string) =
-  var
-    prefixes = newSeq[string]()
-    prefix = ""
-    pad = newSeq[int]()
-  for t in text.splitLines:
-    let line = t.render
-    contextRoutine c
-
 proc getContext(s: string): Context =
   result = newContext()
   var
