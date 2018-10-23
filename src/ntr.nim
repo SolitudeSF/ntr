@@ -38,8 +38,6 @@ Specifying both -d and -D negates both options.
   envPrefix = "NTR_"
   emptySet: set[char] = {}
 
-let emptyContext = newStringTable()
-
 proc abortWith(s: string, n = 1) = stderr.writeLine s; quit n
 
 func newContext*: Context = newStringTable()
@@ -62,8 +60,8 @@ func isExportable(s: string): bool =
     true
   else: false
 
-proc renderFile*(file: string, c = emptyContext): string
-proc render*(text: string, c = emptyContext): string
+proc renderFile*(file: string, c = newContext()): string
+proc render*(text: string, c = newContext()): string
 
 proc parseId(c: var Context, k, v: string, p = "") {.inline.} =
   if k.endsWith('*') and k.isExportable:
@@ -196,13 +194,13 @@ template renderRoutine(lines: untyped): untyped =
     result &= r & "\p"
   result.setLen result.high
 
-proc renderFile*(file: string, c = emptyContext): string =
+proc renderFile*(file: string, c = newContext()): string =
   renderRoutine file.lines
 
-proc renderStdin*(c = emptyContext): string =
+proc renderStdin*(c = newContext()): string =
   renderRoutine stdin.lines
 
-proc render*(text: string, c = emptyContext): string =
+proc render*(text: string, c = newContext()): string =
   renderRoutine text.splitLines
 
 proc parseProfile*(file: string, i, o: var seq[string]) =
