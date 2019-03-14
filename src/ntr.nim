@@ -1,5 +1,5 @@
-import strutils, strformat, strtabs, os, osproc, sequtils, parseopt, terminal
-import chroma
+import strutils, strformat, strtabs, os, osproc, sequtils, terminal
+import chroma, cligen/parseopt3
 
 type Context = StringTableRef
 
@@ -258,7 +258,7 @@ when isMainModule:
       of "help", "h": abortWith help, 0
       of "version", "v": abortWith version, 0
       else: abortWith &"Couldn't parse command line argument: {key}"
-    of cmdEnd: discard
+    of cmdError, cmdEnd: discard
 
   if onlyDef and onlyExt:
     onlyDef = false
