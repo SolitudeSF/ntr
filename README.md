@@ -4,7 +4,8 @@
   - [x] Enviroment variable
   - [x] Shell command
 - [x] Context parsing
-- [ ] Configuration (?????)
+- [x] Manipulation of expanded values
+  - [x] Color manipulation
 - [ ] Docs
 - [ ] Being concise and intuitive
 
