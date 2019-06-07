@@ -1,39 +1,9 @@
 import strutils, strformat, strtabs, os, osproc, sequtils, terminal
-import chroma, cligen/parseopt3
+import chroma, cligen
 
 type Context = StringTableRef
 
 const
-  help = """
-Usage: ntr [OPTIONS] [OUTPUT FILES]
-
-Arguments:
-  Context files supplied as arguments and sourced from pwd or from ntrDirectory/contexts
-
-Options:
-  -i, --in        add input file from pwd or from ntrDirectory/templates
-  -I, --inplace   add input file and modify it in-place
-  -o, --out       add output file
-  -p, --profile   specify profile file
-  --noDefaultProfile, --ndp     disable default profile
-  --noDefaultContext, --ndc     disable default context
-  --noDefaultFinisher, --ndf    disable default finisher
-  --override      specify context addition/overrides
-  --backup        backup existing files
-  -e, --empty     allow empty context
-  -E              force empty context
-  -f              force execution of finishers
-  -F              disable execution of finishers
-  -d              only use files from ntrDirectory
-  -D              never use files from ntrDirectory
-  -h, --help      print this message
-  -v, --version   print version number
-
-If no profile or input files specified, input/output pairs are read from ntrDirectory/profile.
-Specifying both -d and -D negates both options.
-"""
-  gitrev = staticExec "git describe --tags --long --dirty | sed -E 's/-.+-/ /'"
-  version = &"ntr {gitrev} compiled at {CompileDate} {CompileTime}"
   illegalChars = {'.', '{', '}', '<', '>', ':', '$', '|'} + Whitespace
   envPrefix = "NTR_"
   emptySet: set[char] = {}
@@ -199,7 +169,21 @@ proc parseProfile(file: string, i, o: var seq[string]) =
     i.add k
     o.add v
 
-when isMainModule:
+proc ntr(
+  context_files: seq[string],
+  profile = "",
+  in_file: seq[string] = @[], out_file: seq[string] = @[],
+  inplace: seq[string] = @[], override: seq[string] = @[],
+  only_default = false, only_external = false,
+  no_def_profile = false, no_def_context = false, no_def_finisher = false,
+  allow_empty = false, force_empty = false,
+  backup = false, finish = true
+): int =
+  ## Context files supplied as arguments and sourced from cwd or from ntrDirectory/contexts.
+  ##
+  ## If no profile or input files specified, input/output pairs are read from ntrDirectory/profile.
+  ## Specifying both -d and -D negates both options.
+
   let
     ntrDir         = getConfigDir() / "ntr"
     ntrProfiles    = ntrDir / "profiles"
@@ -209,112 +193,78 @@ when isMainModule:
     ntrDefProfile  = ntrProfiles / "default"
     ntrDefContext  = ntrContexts / "default"
     ntrDefFinisher = ntrFinishers / "default"
+
   var
-    inFiles           = newSeq[string]()
-    outFiles          = newSeq[string]()
-    contextFiles      = newSeq[string]()
-    profileFile       = ""
-    context           = newContext()
-    overrideContext   = newContext()
-    onlyDef           = false
-    onlyExt           = false
-    defaultProfile    = true
-    defaultContext    = true
-    defaultFinisher   = true
-    doBackup          = false
-    doFinish          = 0
-    allowEmptyContext = false
-    forceEmpty        = false
+    noDefProfile = noDefProfile
+    onlyDefault = onlyDefault
+    onlyExternal = onlyExternal
+    inFiles = inFile
+    outFiles = outFile
+    context = newContext()
+    overrideContext = newContext()
 
-  for kind, key, val in getopt():
-    case kind
-    of cmdArgument:
-      contextFiles.add key
-    of cmdLongOption, cmdShortOption:
-      case key
-      of "in", "i": inFiles.add val
-      of "out", "o": outFiles.add val
-      of "inplace", "I":
-        inFiles.add val
-        outFiles.add val
-      of "profile", "p": profileFile = val
-      of "override", "r":
-        let t = val.split(':', 1)
-        if t.len == 2:
-          overrideContext.parseId t[0].strip, t[1].strip
-        else: abortWith &"Incorrect override: {val}"
-      of "backup": doBackup = true
-      of "noDefaultProfile", "ndp": defaultProfile = false
-      of "noDefaultContext", "ndc": defaultContext = false
-      of "noDefaultFinisher", "ndf": defaultFinisher = false
-      of "d": onlyDef = true
-      of "D": onlyExt = true
-      of "empty", "e": allowEmptyContext = true
-      of "E":
-        forceEmpty = true
-        allowEmptyContext = true
-      of "f": doFinish = 1
-      of "F": doFinish = -1
-      of "help", "h": abortWith help, 0
-      of "version", "v": abortWith version, 0
-      else: abortWith &"Couldn't parse command line argument: {key}"
-    of cmdError, cmdEnd: discard
+  if onlyDefault and onlyExternal:
+    onlyDefault = false
+    onlyExternal = false
 
-  if onlyDef and onlyExt:
-    onlyDef = false
-    onlyExt = false
-
-  if profileFile.len > 0:
-    if not onlyDef and existsFile profileFile:
-      parseProfile profileFile, inFiles, outFiles
-    elif not onlyExt and existsFile ntrProfiles / profileFile:
-      parseProfile ntrProfiles / profileFile, inFiles, outFiles
+  if profile.len > 0:
+    if not onlyDefault and existsFile profile:
+      parseProfile profile, inFiles, outFiles
+    elif not onlyExternal and existsFile ntrProfiles / profile:
+      parseProfile ntrProfiles / profile, inFiles, outFiles
     else:
-      abortWith &"File `{profileFile}` does not exist"
+      abortWith &"File `{profile}` does not exist"
 
   if inFiles.len != outFiles.len:
     abortWith "Input/output files mismatch"
 
+  for file in inplace:
+    inFiles.add file
+    outFiles.add file
+
   if not forceEmpty:
-    if defaultContext and not onlyExt and existsFile ntrDefContext:
+    if not noDefContext and not onlyExternal and existsFile ntrDefContext:
       context.addContextFile ntrDefContext
 
     for file in contextFiles:
-      if not onlyDef and existsFile file:
+      if not onlyDefault and existsFile file:
         context.addContextFile file
-      elif not onlyExt and existsFile ntrContexts / file:
+      elif not onlyExternal and existsFile ntrContexts / file:
         context.addContextFile ntrContexts / file
       else:
         abortWith &"File `{file}` does not exist"
 
-    for key, val in overrideContext:
-      context[key] = val
+    for s in override:
+      let splits = s.split(':', 1)
+      if splits.len == 2:
+        context.parseId splits[0], splits[1]
+      else:
+        abortWith &"Incorrect override: {splits[0]}"
 
-  if not allowEmptyContext and context.len == 0:
+  if not (allowEmpty or forceEmpty) and context.len == 0:
     abortWith "Empty context"
 
   if not stdin.isatty:
-    defaultProfile = false
+    noDefProfile = true
     echo renderStdin context
 
-  if defaultProfile and inFiles.len == 0 and ntrDefProfile.existsFile:
-    if doFinish == 0: doFinish = 1
+  if not noDefProfile and inFiles.len == 0 and ntrDefProfile.existsFile:
     ntrDefProfile.parseProfile inFiles, outFiles
 
-  for i, file in inFiles:
+  for n, file in inFiles:
     var output = ""
-    if not onlyDef and existsFile file:
+    if not onlyDefault and existsFile file:
       output = file.renderFile context
-    elif not onlyExt and existsFile ntrTemplates / file:
+    elif not onlyExternal and existsFile ntrTemplates / file:
       output = (ntrTemplates / file).renderFile context
     else:
       abortWith &"File `{file}` does not exist"
-    let outfile = outFiles[i]
+    let outfile = outFiles[n]
     if outfile == "--":
       echo output
     else:
       let dir = parentDir outfile
-      if doBackup and existsFile outfile:
+      if backup and existsFile outfile:
         try:
           copyFileWithPermissions outfile, outfile & ".bak"
         except:
@@ -329,7 +279,7 @@ when isMainModule:
       except:
         abortWith &"Couldn't write to `{outfile}`."
 
-  if doFinish == 1:
+  if finish:
     for i in inFiles:
       let f = ntrFinishers / i.extractFilename
       if existsFile f:
@@ -339,10 +289,33 @@ when isMainModule:
             stderr.writeLine &"Finisher `{f}` exited with {errC}"
         except:
           stderr.writeLine &"Couldn't run finisher `{f}`"
-    if defaultFinisher and existsFile ntrDefFinisher:
+    if not noDefFinisher and existsFile ntrDefFinisher:
       try:
         let errC = execCmd ntrDefFinisher
         if errC != 0:
           stderr.writeLine &"Default finisher exited with {errC}"
       except:
         stderr.writeLine &"Couldn't run default finisher"
+
+clCfg.version = "0.3.2"
+dispatch ntr,
+  short = {"in_file": 'i', "out_file": 'o', "inplace": 'I', "profile": 'p',
+    "allow_empty": 'e', "force_empty": 'E', "only_default": 'd',
+    "only_external": 'D', "no_def_context": 'C', "no_def_finisher": 'F',
+    "no_def_profile": 'P', "finish": 'f', "override": 'O', "version": 'v'},
+  help = {
+    "in_file": "add input file from pwd or from ntrDirectory/templates",
+    "inplace": "add input file and modify it in-place",
+    "out_file": "add output file",
+    "profile": "specify profile file",
+    "no_def_context": "disable default context",
+    "no_def_profile": "disable default profile",
+    "no_def_finisher": "disable default finisher",
+    "allow_empty": "don't abort on empty context",
+    "force_empty": "force empty context",
+    "finish": "enable/disable execution of finishers",
+    "only_default": "only use files from ntrDirectory",
+    "only_external": "never use files from ntrDirectory",
+    "override": "specify context addition/overrides",
+    "backup": "backup existing files"
+  }
