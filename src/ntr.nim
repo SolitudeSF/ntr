@@ -297,7 +297,7 @@ proc ntr(
       except:
         stderr.writeLine &"Couldn't run default finisher"
 
-clCfg.version = "0.3.2"
+clCfg.version = "0.4.0"
 dispatch ntr,
   short = {"in_file": 'i', "out_file": 'o', "inplace": 'I', "profile": 'p',
     "allow_empty": 'e', "force_empty": 'E', "only_default": 'd',
