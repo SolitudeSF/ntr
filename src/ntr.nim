@@ -171,7 +171,7 @@ template renderRoutine(lines: untyped): untyped =
       i = line.high
       os = newSeq[int]()
     while i >= line.low:
-      let o = r.rfind("<{", i)
+      let o = r.rfind("<{", last = i)
       if o != -1:
         i = o - 1
         os.add o
