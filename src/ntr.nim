@@ -1,5 +1,5 @@
 import strutils, strformat, strtabs, os, osproc, sequtils, terminal
-import chroma, cligen
+import imageman/colors, cligen
 
 type Context = StringTableRef
 
@@ -50,7 +50,10 @@ template contextRoutine(c: var Context): untyped =
       while pad.len > 0 and ws <= pad[^1]:
         pad.del pad.high
         prefixes.del prefixes.high
-      prefix = prefixes.foldl(a & b & '.', "")
+      prefix.setLen 0
+      for pref in prefixes:
+        prefix &= pref
+        prefix &= '.'
     if l.find(':') == -1:
       if not l.isIdentifier:
         abortWith "Illegal section name: " & l
@@ -83,18 +86,72 @@ proc getContext(s: string): Context =
     let line = t.render
     contextRoutine result
 
+func parseHex(c: char): uint8 =
+  result = uint8(
+    case c
+    of '0'..'9': c.ord - '0'.ord
+    of 'a'..'f': 10 + c.ord - 'a'.ord
+    of 'A'..'F': 10 + c.ord - 'A'.ord
+    else: 0
+  )
+
+func parseColor(s: string, alpha, oct: bool): ColorRGBAU =
+  let s = if oct: s[1..^1] else: s
+  ColorRGBAU [
+    s[0].parseHex * 16 + s[1].parseHex,
+    s[2].parseHex * 16 + s[3].parseHex,
+    s[4].parseHex * 16 + s[5].parseHex,
+    if alpha: s[6].parseHex * 16 + s[7].parseHex
+    else: 255
+  ]
+
+func toHexChar(u: uint8): char =
+  case u
+  of 0..9: chr(u + '0'.ord)
+  of 10..15: chr(u - 10 + 'A'.ord)
+  else: raise newException(ValueError, "Cant convert to character.")
+
+func toHex(u: uint8): string =
+  result = newString(2)
+  result[0] = toHexChar(u div 16)
+  result[1] = toHexChar(u mod 16)
+
+func toHex(c: ColorRGBAU, alpha, oct: bool): string =
+  if oct: result &= '#'
+  result &= c.r.toHex
+  result &= c.g.toHex
+  result &= c.b.toHex
+  if alpha: result &= c.a.toHex
+
+func lighten(c: ColorRGBAU, a: float): ColorRGBAU =
+  var hsl = c.toRGBF.toHSL
+  hsl.l += a
+  hsl.l = clamp(hsl.l, 0, 1)
+  result = hsl.toRGBF.toRGBAF.toRGBAU
+  result.a = c.a
+
+func darken(c: ColorRGBAU, a: float): ColorRGBAU =
+  c.lighten -a
+
+func saturate(c: ColorRGBAU, a: float): ColorRGBAU =
+  var hsl = c.toRGBF.toHSL
+  hsl.s += a
+  hsl.s = clamp(hsl.s, 0, 1)
+  result = hsl.toRGBF.toRGBAF.toRGBAU
+  result.a = c.a
+
+func desaturate(c: ColorRGBAU, a: float): ColorRGBAU =
+  c.saturate -a
+
 template cmdColor(a): untyped =
   proc `cmd a`(c, v: string): string =
     try:
-      if c.startsWith "#":
-        "#" & c.parseHtmlHex.`a`(v.parseFloat).toHex
-      else: c.parseHex.`a`(v.parseFloat).toHex
+      let
+        hasAlpha = c.len > 7
+        hasOct = c[0] == '#'
+      return c.parseColor(hasAlpha, hasOct).`a`(v.parseFloat).toHex(hasAlpha, hasOct)
     except ValueError:
       stderr.writeLine "Couldn't parse value: " & v
-      ""
-    except InvalidColor:
-      stderr.writeLine "Couldn't parse color: " & c
-      ""
 
 cmdColor lighten
 cmdColor darken
@@ -260,7 +317,7 @@ proc ntr(
     else:
       abortWith &"File `{file}` does not exist"
     let outfile = outFiles[n]
-    if outfile == "--":
+    if outfile == "-":
       echo output
     else:
       let dir = parentDir outfile
