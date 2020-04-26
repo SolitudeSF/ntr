@@ -1,4 +1,3 @@
-[![TravisCI](https://travis-ci.org/SolitudeSF/ntr.svg?branch=master)](https://travis-ci.org/SolitudeSF/ntr)
 - [x] Template substitution
   - [x] Context variable
   - [x] Enviroment variable
