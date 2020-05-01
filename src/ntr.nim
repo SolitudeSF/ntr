@@ -4,7 +4,7 @@ import imageman/colors, cligen
 type Context = StringTableRef
 
 const
-  illegalChars = {'.', '{', '}', '<', '>', ':', '$', '|'} + Whitespace
+  illegalChars = {'{', '}', '<', '>', ':', '$', '|'} + Whitespace
   envPrefix = "NTR_"
   emptySet: set[char] = {}
 
