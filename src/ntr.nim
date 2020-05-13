@@ -124,20 +124,20 @@ func toHex(c: ColorRGBAU, alpha, oct: bool): string =
   if alpha: result &= c.a.toHex
 
 func lighten(c: ColorRGBAU, a: float): ColorRGBAU =
-  var hsl = c.to(ColorRGBF).to(ColorHSL)
+  var hsl = c.to(ColorRGBF64).to(ColorHSLuv)
   hsl.l += a
   hsl.l = clamp(hsl.l, 0, 1)
-  result = hsl.to(ColorRGBF).to(ColorRGBAU)
+  result = hsl.to(ColorRGBF64).to(ColorRGBAU)
   result.a = c.a
 
 func darken(c: ColorRGBAU, a: float): ColorRGBAU =
   c.lighten -a
 
 func saturate(c: ColorRGBAU, a: float): ColorRGBAU =
-  var hsl = c.to(ColorRGBF).to(ColorHSL)
+  var hsl = c.to(ColorRGBF64).to(ColorHSLuv)
   hsl.s += a
   hsl.s = clamp(hsl.s, 0, 1)
-  result = hsl.to(ColorRGBF).to(ColorRGBAU)
+  result = hsl.to(ColorRGBF64).to(ColorRGBAU)
   result.a = c.a
 
 func desaturate(c: ColorRGBAU, a: float): ColorRGBAU =
