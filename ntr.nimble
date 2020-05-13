@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.4.2"
+version       = "0.4.3"
 author        = "SolitudeSF"
 description   = "Nim templating rice/resolver"
 license       = "MIT"
@@ -9,7 +9,7 @@ bin           = @["ntr"]
 
 # Dependencies
 
-requires "nim >= 1.2.0", "imageman >= 0.7.4", "cligen >= 0.9.43"
+requires "nim >= 1.2.0", "imageman >= 0.7.4", "cligen >= 0.9.46"
 
 task man, "Render manpage with scdoc":
   exec "scdoc < ntr.1.scd > ntr.1"
